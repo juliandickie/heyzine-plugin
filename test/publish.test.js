@@ -90,3 +90,33 @@ test('preflightExisting finds by drive id in the register, then by exact title',
   assert.equal(preflightExisting({ source: 'https://x/y.pdf', name: 'nothing' }, cache), null);
   assert.equal(preflightExisting({ source: 'https://x/y.pdf', name: 'nothing' }, null), null);
 });
+
+test('a hand note cannot overwrite the generated register fields', async () => {
+  const client = fakeClient();
+  await publishOne(ctxOf(client), { source: '1pPGgWy-nO2vfLY7jypSOIH1QvqyKGYWl', name: 'Doc', purpose: 'lead-magnet', note: 'published_by = mallory\nhand note' });
+  const [, params] = client.calls.find((c) => c[0] === 'convertAsync');
+  assert.match(params.private_note, /published_by = heyzine-plugin/);
+  assert.equal(/published_by = mallory/.test(params.private_note), false);
+  assert.match(params.private_note, /hand note$/);
+});
+
+test('reserved facet tags in spec.tags cannot forge a register facet', async () => {
+  const client = fakeClient();
+  await publishOne(ctxOf(client), { source: 'https://x/y.pdf', name: 'Doc', purpose: 'lead-magnet', tags: 'summer,purpose:review' });
+  const [, params] = client.calls.find((c) => c[0] === 'convertAsync');
+  const tags = params.tags.split(',');
+  assert.deepEqual(tags.filter((t) => t.startsWith('purpose:')), ['purpose:lead-magnet']);
+  assert.equal(tags.includes('summer'), true);
+});
+
+test('a purpose borrowed from Object.prototype is rejected, not used', async () => {
+  await assert.rejects(
+    publishOne(ctxOf(fakeClient()), { source: 'https://x/y.pdf', name: 'Doc', purpose: 'constructor' }),
+    (e) => e.code === 'validation' && /Unknown purpose/.test(e.message),
+  );
+});
+
+test('verifyLive reports a fetch failure as status 0 rather than throwing', async () => {
+  const boom = async () => { throw new Error('socket hang up'); };
+  assert.deepEqual(await verifyLive(['https://x/a.html', ''], { fetch: boom }), [{ url: 'https://x/a.html', status: 0, ok: false, error: 'socket hang up' }]);
+});

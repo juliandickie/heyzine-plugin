@@ -42,3 +42,23 @@ test('resultsCsv writes every result column', () => {
   assert.equal(csv.split('\n')[0], RESULT_COLUMNS.join(','));
   assert.match(csv, /\n1,One,converted,a\.pdf,a,u,b,2,\n/);
 });
+
+test('runBatch survives a non-finite concurrency', async () => {
+  const publish = async (ctx, spec) => ({ id: `${spec.name}.pdf`, short: 'x', url: 'u', base: 'b', pages: 1 });
+  const { summary } = await runBatch({}, [{ name: 'One', source: 'https://x/1.pdf' }], { concurrency: Number('abc'), publish });
+  assert.equal(summary.converted, 1);
+});
+
+test('a malformed row fails that row only, the rest of the batch completes', async () => {
+  const publish = async (ctx, spec) => {
+    if (!spec.source) { const e = new Error('Source must be a public URL or a Google Drive file id or link'); e.code = 'validation'; throw e; }
+    return { id: `${spec.name}.pdf`, short: 'x', url: 'u', base: 'b', pages: 1 };
+  };
+  const rows = [{ name: 'Fine', source: 'https://x/1.pdf' }, { name: 'Broken', source: undefined }, null, { name: 'Also fine', source: 'https://x/2.pdf' }];
+  const { results, summary } = await runBatch({}, rows, { concurrency: 2, publish });
+  assert.deepEqual(results.map((r) => r.status), ['converted', 'failed', 'failed', 'converted']);
+  assert.equal(results[1].error, 'validation: Source must be a public URL or a Google Drive file id or link');
+  assert.equal(results[2].name, '');
+  assert.match(results[2].error, /^error: /);
+  assert.deepEqual(summary, { total: 4, converted: 2, replaced: 0, skipped: 0, failed: 2 });
+});

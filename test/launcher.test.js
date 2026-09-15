@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { main, proxyPath, buildArgv, MCP_URL, HEADER_FILE_NAME } from '../scripts/run-mcp.mjs';
+import { main, proxyPath, buildArgv, childEnv, MCP_URL, HEADER_FILE_NAME, SECRET_ENV } from '../scripts/run-mcp.mjs';
 
 function fakeSpawn(exitCode = 0) {
   const spawned = [];
@@ -15,27 +15,54 @@ function fakeSpawn(exitCode = 0) {
   return { spawnImpl, spawned };
 }
 
+function failingSpawn(message = 'spawn ENOENT') {
+  const spawned = [];
+  const spawnImpl = (cmd, args, opts) => {
+    const child = new EventEmitter();
+    child.kill = () => {};
+    spawned.push({ cmd, args, opts, child });
+    setImmediate(() => child.emit('error', new Error(message)));
+    return child;
+  };
+  return { spawnImpl, spawned };
+}
+
 const base = (over = {}) => {
-  const writes = []; const chmods = []; const errs = [];
+  const writes = []; const chmods = []; const errs = []; const rms = []; const ops = [];
   const { spawnImpl, spawned } = fakeSpawn();
   return {
     deps: {
-      env: { HEYZINE_PLUGIN_DATA: '/data', CLAUDE_PLUGIN_ROOT: '/root' },
+      env: {
+        HEYZINE_PLUGIN_DATA: '/data', CLAUDE_PLUGIN_ROOT: '/root', PATH: '/usr/bin',
+        HEYZINE_API_KEY: 'SECRET', HEYZINE_KEY_OP_REF: 'op://Vault/Item/field', HEYZINE_OP_ACCOUNT: 'team.1password.com',
+        CLAUDE_PLUGIN_OPTION_HEYZINE_API_KEY: 'SECRET',
+      },
       resolve: async () => ({ key: 'SECRET', source: 'file' }),
-      write: async (p, text, opts) => { writes.push({ p, text, opts }); },
+      write: async (p, text, opts) => { writes.push({ p, text, opts }); ops.push('write'); },
       mkdirp: async () => {}, chmodImpl: async (p, mode) => { chmods.push({ p, mode }); },
+      rmImpl: async (p, opts) => { rms.push({ p, opts }); ops.push('rm'); },
       exists: () => true, spawnImpl, stderr: { write: (s) => errs.push(s) }, execPath: '/usr/bin/node', onSignal: () => {},
       ...over,
     },
-    writes, chmods, errs, spawned,
+    writes, chmods, errs, spawned, rms, ops,
   };
 };
 
 test('proxyPath and buildArgv', () => {
   assert.equal(proxyPath('/data'), '/data/node_modules/mcp-remote/dist/proxy.js');
   assert.equal(MCP_URL, 'https://heyzine.com/mcp');
+  assert.equal(HEADER_FILE_NAME, 'mcp-remote.headers');
   assert.deepEqual(buildArgv({ proxy: '/p.js', headerFile: '/data/h' }), ['/p.js', 'https://heyzine.com/mcp', '--transport', 'http-only', '--header-file', '/data/h']);
   assert.deepEqual(buildArgv({ proxy: '/p.js', headerFile: null }), ['/p.js', 'https://heyzine.com/mcp', '--transport', 'http-only']);
+});
+
+test('childEnv strips every key-bearing variable and keeps the rest', () => {
+  const env = { PATH: '/usr/bin', CLAUDE_PLUGIN_ROOT: '/root', HEYZINE_API_KEY: 'SECRET', HEYZINE_KEY_OP_REF: 'op://a/b/c', HEYZINE_OP_ACCOUNT: 'team.1password.com' };
+  const out = childEnv(env);
+  for (const name of SECRET_ENV) assert.equal(name in out, false, `${name} should be stripped`);
+  assert.equal(out.PATH, '/usr/bin');
+  assert.equal(out.CLAUDE_PLUGIN_ROOT, '/root');
+  assert.equal(env.HEYZINE_API_KEY, 'SECRET', 'the caller env must not be mutated');
 });
 
 test('with a key the launcher writes a 0600 header file and never puts the key in argv', async () => {
@@ -45,6 +72,7 @@ test('with a key the launcher writes a 0600 header file and never puts the key i
   assert.equal(h.writes[0].p, `/data/${HEADER_FILE_NAME}`);
   assert.equal(h.writes[0].text, 'Authorization: Bearer SECRET\n');
   assert.equal(h.writes[0].opts.mode, 0o600);
+  assert.equal(h.writes[0].opts.flag, 'wx');
   assert.deepEqual(h.chmods, [{ p: `/data/${HEADER_FILE_NAME}`, mode: 0o600 }]);
   const { cmd, args, opts } = h.spawned[0];
   assert.equal(cmd, '/usr/bin/node');
@@ -54,12 +82,37 @@ test('with a key the launcher writes a 0600 header file and never puts the key i
   assert.equal(h.errs.join('').includes('SECRET'), false);
 });
 
-test('without a key the launcher starts mcp-remote in OAuth mode and says so', async () => {
+test('the child environment carries no key and no pointer to one', async () => {
+  const h = base();
+  assert.equal(await main(h.deps), 0);
+  const { env } = h.spawned[0].opts;
+  for (const name of SECRET_ENV) assert.equal(name in env, false, `${name} should not reach the child`);
+  assert.equal(env.HEYZINE_PLUGIN_DATA, '/data');
+  assert.equal(env.CLAUDE_PLUGIN_ROOT, '/root');
+  assert.equal(env.PATH, '/usr/bin');
+  assert.equal(h.deps.env.HEYZINE_API_KEY, 'SECRET', 'the launcher env must not be mutated');
+});
+
+test('the header file is removed before it is written and again when the child exits', async () => {
+  const h = base();
+  assert.equal(await main(h.deps), 0);
+  assert.deepEqual(h.ops, ['rm', 'write', 'rm']);
+  assert.equal(h.rms.length, 2);
+  for (const call of h.rms) {
+    assert.equal(call.p, `/data/${HEADER_FILE_NAME}`);
+    assert.deepEqual(call.opts, { force: true });
+  }
+});
+
+test('without a key the launcher clears any stale header file, starts OAuth mode and says so', async () => {
   const h = base({ resolve: async () => ({ key: null, source: 'none', configPath: '/cfg' }) });
   assert.equal(await main(h.deps), 0);
   assert.equal(h.writes.length, 0);
   assert.equal(h.spawned[0].args.includes('--header-file'), false);
   assert.match(h.errs.join(''), /OAuth/);
+  assert.deepEqual(h.ops, ['rm']);
+  assert.equal(h.rms[0].p, `/data/${HEADER_FILE_NAME}`);
+  assert.deepEqual(h.rms[0].opts, { force: true });
 });
 
 test('a configuration error exits 2 with the message', async () => {
@@ -70,10 +123,28 @@ test('a configuration error exits 2 with the message', async () => {
   assert.equal(h.spawned.length, 0);
 });
 
+test('a multi-line key is rejected before anything is written', async () => {
+  const h = base({ resolve: async () => ({ key: 'SECRET\nX-Evil: header', source: 'file' }) });
+  assert.equal(await main(h.deps), 2);
+  assert.match(h.errs.join(''), /API key must be a single line/);
+  assert.equal(h.writes.length, 0);
+  assert.equal(h.rms.length, 0);
+  assert.equal(h.spawned.length, 0);
+});
+
 test('missing mcp-remote exits 2 with the install hint', async () => {
   const h = base({ exists: () => false });
   assert.equal(await main(h.deps), 2);
   assert.match(h.errs.join(''), /install-deps\.sh/);
+});
+
+test('a spawn error exits 2, names mcp-remote and still clears the header file', async () => {
+  const { spawnImpl } = failingSpawn('spawn ENOENT');
+  const h = base({ spawnImpl });
+  assert.equal(await main(h.deps), 2);
+  assert.match(h.errs.join(''), /failed to start mcp-remote/);
+  assert.match(h.errs.join(''), /spawn ENOENT/);
+  assert.deepEqual(h.ops, ['rm', 'write', 'rm']);
 });
 
 test('the child exit code is forwarded', async () => {

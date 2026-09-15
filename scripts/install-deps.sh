@@ -5,17 +5,21 @@
 set -uo pipefail
 ROOT="${CLAUDE_PLUGIN_ROOT:-}"
 if [ -z "$ROOT" ]; then echo "heyzine: CLAUDE_PLUGIN_ROOT is not set; skipping dependency check" >&2; exit 0; fi
-DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/heyzine}"
+# Same precedence as dataDir() in lib/config.mjs - the override wins, then the plugin data
+# dir, then the default location.
+DATA="${HEYZINE_PLUGIN_DATA:-${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/heyzine}}"
 WANT="$(ROOT="$ROOT" node -p "require(process.env.ROOT + '/package.json').heyzinePlugin.mcpRemoteVersion" 2>/dev/null || echo "")"
 if [ -z "$WANT" ]; then echo "heyzine: could not read the pinned mcp-remote version from package.json" >&2; exit 0; fi
 HAVE=""
 if [ -f "$DATA/node_modules/mcp-remote/package.json" ]; then
   HAVE="$(DATA="$DATA" node -p "require(process.env.DATA + '/node_modules/mcp-remote/package.json').version" 2>/dev/null || echo "")"
 fi
-if [ "$HAVE" = "$WANT" ]; then exit 0; fi
+# The version alone is not proof of a usable install - the launcher runs dist/proxy.js, so a
+# half-unpacked or pruned tree needs reinstalling even when package.json reads right.
+if [ "$HAVE" = "$WANT" ] && [ -f "$DATA/node_modules/mcp-remote/dist/proxy.js" ]; then exit 0; fi
 mkdir -p "$DATA"
 if [ ! -f "$DATA/package.json" ]; then printf '{ "name": "heyzine-plugin-data", "private": true }\n' > "$DATA/package.json"; fi
-if npm install --prefix "$DATA" --no-audit --no-fund --no-package-lock --loglevel=error "mcp-remote@$WANT" >/dev/null 2>"$DATA/install.log"; then
+if npm install --prefix "$DATA" --no-audit --no-fund --no-package-lock --ignore-scripts --loglevel=error "mcp-remote@$WANT" >/dev/null 2>"$DATA/install.log"; then
   echo "heyzine: installed mcp-remote $WANT into the plugin data dir"
 else
   echo "heyzine: mcp-remote install failed (see $DATA/install.log); the Heyzine MCP bridge is unavailable this session, the heyzine CLI still works" >&2

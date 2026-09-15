@@ -113,10 +113,36 @@ test('mcpCall posts a tools/call envelope and unwraps text or JSON results', asy
   assert.deepEqual(hits, [{ flipbook: '<short>.html', page: 6, text: 'zirconia' }]);
   assert.equal(calls[0].url, 'https://heyzine.com/mcp');
   assert.equal(calls[0].init.headers['MCP-Protocol-Version'], '2025-06-18');
+  assert.equal(calls[0].init.headers.Accept, 'application/json, text/event-stream');
   assert.deepEqual(JSON.parse(calls[0].init.body).params, { name: 'heyzine_search_text', arguments: { q: 'zirconia' } });
   assert.equal(await c.pageText('<short>', 1), 'Plain page text');
   assert.deepEqual(JSON.parse(calls[1].init.body).params.arguments, { n: '<short>', p: 1 });
   await assert.rejects(c.mcpCall('heyzine_list_bookshelves', {}), (e) => e.code === 'plan');
   await assert.rejects(c.mcpCall('nope', {}), (e) => e.code === 'validation' && /Unknown tool/.test(e.message));
   await assert.rejects(c.mcpCall('heyzine_list_flipbooks', {}), (e) => e.code === 'auth');
+});
+
+test('classify covers the HTTP status branches', () => {
+  assert.throws(() => classify({ status: 403, body: { msg: 'Requires a plan with custom URLs' }, endpoint: 'flipbook-design' }), (e) => e instanceof HeyzineError && e.code === 'plan');
+  assert.throws(() => classify({ status: 403, body: { msg: 'Forbidden' }, endpoint: 'flipbook-design' }), (e) => e.code === 'auth');
+  assert.throws(() => classify({ status: 400, body: { msg: 'bad request' }, endpoint: 'flipbook-design' }), (e) => e.code === 'validation');
+  assert.throws(() => classify({ status: 418, body: {}, endpoint: 'x' }), (e) => e.code === 'unknown');
+});
+
+test('a missing key is a config error and the key never enumerates or serialises', () => {
+  assert.throws(() => new HeyzineClient({}), (e) => e instanceof HeyzineError && e.code === 'config');
+  const { fetch } = fakeFetch(() => ({ body: { success: true } }));
+  const c = new HeyzineClient({ key: 'sk-secret-value', fetch, sleep: noSleep });
+  assert.ok(!Object.keys(c).includes('key'));
+  assert.ok(!JSON.stringify(c).includes('sk-secret-value'));
+  assert.equal(c.key, 'sk-secret-value');
+});
+
+test('a per-call backoffMs of [] stops the retry loop after one fetch', async () => {
+  const slept = [];
+  const { fetch, calls } = fakeFetch(() => ({ status: 503, body: 'busy' }));
+  const c = new HeyzineClient({ key: 'K', fetch, sleep: async (ms) => { slept.push(ms); } });
+  await assert.rejects(c.request('GET', 'flipbook-list', { backoffMs: [] }), (e) => e.code === 'transient');
+  assert.equal(calls.length, 1);
+  assert.deepEqual(slept, []);
 });

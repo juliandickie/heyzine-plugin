@@ -113,9 +113,9 @@ public URL, and are resolved through the inventory cache or a live list.
 | `shelf-add <shelf> <flipbook> [--position N]` | Add at a position, or append |
 | `shelf-remove <shelf> <flipbook>` | Remove from the shelf, leaving the flipbook alone |
 | `shelf-social <shelf> [--title T] [--description D] [--thumbnail URL]` | The shelf's Open Graph card |
-| `access-setup <id> --mode disabled\|everyone\|users [--type flipbook\|bookshelf] [--password P] [--text-user T] [--text-password T]` | Turn access control on or off and set the prompt text |
-| `access-add <id> --access-type T [--user U] [--password P] [--type flipbook\|bookshelf]` | Grant one entry (user_pass, google, pass_only, otp, email_link, email_code, send_code) |
-| `access-remove <id> [--user U] [--password P] [--type flipbook\|bookshelf]` | Revoke one entry |
+| `access-setup <id> --mode disabled\|everyone\|users [--type flipbook\|bookshelf] [--password P \| --password-stdin] [--text-user T] [--text-password T]` | Turn access control on or off and set the prompt text |
+| `access-add <id> --access-type T [--user U] [--password P \| --password-stdin] [--type flipbook\|bookshelf]` | Grant one entry (user_pass, google, pass_only, otp, email_link, email_code, send_code) |
+| `access-remove <id> [--user U] [--password P \| --password-stdin] [--type flipbook\|bookshelf]` | Revoke one entry |
 | `search <query>` | Full text search across every flipbook in the account |
 | `page-text <id> <page>` | The extracted text of one page |
 | `oembed <flipbook url> [--maxwidth N] [--maxheight N]` | The embeddable iframe html |
@@ -138,6 +138,26 @@ that actually stores a new edition under the same id. `convert --replace` theref
 ignores `--wait` and prints a notice on stderr saying the call may take a while for a
 large document. The async endpoint accepts the flag, answers `processed` at once and
 leaves the old edition in place, which is why the plugin does not use it for replaces.
+
+Every request carries a timeout - 60 seconds, or 15 minutes for the blocking replace
+endpoint, which really does take minutes on a large document. A request that runs out of
+time fails with the `timeout` code and is never retried, because the server may well be
+part way through the work. Transient failures (a network error, a 429, a 5xx) are retried
+three times with backoff on GET requests and on the two convert endpoints only; every
+other POST or PATCH is attempted exactly once, since retrying a write can publish,
+delete, reorder or grant twice.
+
+The three `access-*` commands take `--password-stdin` instead of `--password`, reading
+the password as the first line of stdin. A password passed as a flag appears in the
+process list and in the session transcript on disk; piped in, it appears in neither.
+
+```bash
+printf '%s\n' "$PW" | heyzine access-add <id> --access-type pass_only --password-stdin
+```
+
+Numeric flags (`--position`, `--limit`, `--offset`, `--maxwidth`, `--maxheight`,
+`--concurrency`, and the `page-text` page argument) are checked at the boundary, so a
+typo is a usage error rather than a silently dropped value.
 
 Batches of more than five rows are refused until you pass `--yes`, so a scope review
 happens before anything is created. `delete` is refused without the exact current title.
@@ -224,13 +244,17 @@ The contract the launcher keeps, asserted by `test/launcher.test.js`.
 
 - The key never appears in `argv`. It is written to a header file in the plugin data dir
   with mode 0600 and passed to `mcp-remote` as `--header-file`.
+- The header file is named `mcp-remote-<pid>.headers`, one per launcher process, and the
+  launcher touches only its own. Two bridges running at once (a desktop session and a
+  terminal one, say) never share, overwrite or delete each other's file.
 - The header file is removed before it is rewritten and again when the child exits, so
   it exists only for the life of one `mcp-remote` process. It holds a live credential in
   plain text and must never be copied, backed up or committed.
 - The key and every variable that points at it are stripped from the child's
   environment.
 - A multi-line key is refused rather than written.
-- With no key configured, no header file is written, any stale one is deleted, and
+- With no key configured, no header file is written, this process's own stale one is
+  deleted, and
   `mcp-remote` runs Heyzine's OAuth sign in instead. The OAuth token works on MCP only.
 - Everything written at runtime (`mcp-remote`, the header file, the inventory cache)
   goes to `${CLAUDE_PLUGIN_DATA}`, never the plugin root, which is replaced on update.

@@ -1,7 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { main, proxyPath, buildArgv, childEnv, MCP_URL, HEADER_FILE_NAME, SECRET_ENV } from '../scripts/run-mcp.mjs';
+import { main, proxyPath, buildArgv, childEnv, MCP_URL, HEADER_FILE_PREFIX, headerFileName, SECRET_ENV } from '../scripts/run-mcp.mjs';
+
+const PID = 4242;
+const HEADERS = `/data/${headerFileName(PID)}`;
 
 function fakeSpawn(exitCode = 0) {
   const spawned = [];
@@ -41,7 +44,7 @@ const base = (over = {}) => {
       write: async (p, text, opts) => { writes.push({ p, text, opts }); ops.push('write'); },
       mkdirp: async () => {}, chmodImpl: async (p, mode) => { chmods.push({ p, mode }); },
       rmImpl: async (p, opts) => { rms.push({ p, opts }); ops.push('rm'); },
-      exists: () => true, spawnImpl, stderr: { write: (s) => errs.push(s) }, execPath: '/usr/bin/node', onSignal: () => {},
+      exists: () => true, spawnImpl, stderr: { write: (s) => errs.push(s) }, execPath: '/usr/bin/node', onSignal: () => {}, pid: PID,
       ...over,
     },
     writes, chmods, errs, spawned, rms, ops,
@@ -51,7 +54,9 @@ const base = (over = {}) => {
 test('proxyPath and buildArgv', () => {
   assert.equal(proxyPath('/data'), '/data/node_modules/mcp-remote/dist/proxy.js');
   assert.equal(MCP_URL, 'https://heyzine.com/mcp');
-  assert.equal(HEADER_FILE_NAME, 'mcp-remote.headers');
+  assert.equal(HEADER_FILE_PREFIX, 'mcp-remote');
+  assert.equal(headerFileName(4242), 'mcp-remote-4242.headers');
+  assert.notEqual(headerFileName(4242), headerFileName(9999));
   assert.deepEqual(buildArgv({ proxy: '/p.js', headerFile: '/data/h' }), ['/p.js', 'https://heyzine.com/mcp', '--transport', 'http-only', '--header-file', '/data/h']);
   assert.deepEqual(buildArgv({ proxy: '/p.js', headerFile: null }), ['/p.js', 'https://heyzine.com/mcp', '--transport', 'http-only']);
 });
@@ -69,11 +74,11 @@ test('with a key the launcher writes a 0600 header file and never puts the key i
   const h = base();
   assert.equal(await main(h.deps), 0);
   assert.equal(h.writes.length, 1);
-  assert.equal(h.writes[0].p, `/data/${HEADER_FILE_NAME}`);
+  assert.equal(h.writes[0].p, HEADERS);
   assert.equal(h.writes[0].text, 'Authorization: Bearer SECRET\n');
   assert.equal(h.writes[0].opts.mode, 0o600);
   assert.equal(h.writes[0].opts.flag, 'wx');
-  assert.deepEqual(h.chmods, [{ p: `/data/${HEADER_FILE_NAME}`, mode: 0o600 }]);
+  assert.deepEqual(h.chmods, [{ p: HEADERS, mode: 0o600 }]);
   const { cmd, args, opts } = h.spawned[0];
   assert.equal(cmd, '/usr/bin/node');
   assert.equal(args.join(' ').includes('SECRET'), false);
@@ -99,7 +104,7 @@ test('the header file is removed before it is written and again when the child e
   assert.deepEqual(h.ops, ['rm', 'write', 'rm']);
   assert.equal(h.rms.length, 2);
   for (const call of h.rms) {
-    assert.equal(call.p, `/data/${HEADER_FILE_NAME}`);
+    assert.equal(call.p, HEADERS);
     assert.deepEqual(call.opts, { force: true });
   }
 });
@@ -111,7 +116,7 @@ test('without a key the launcher clears any stale header file, starts OAuth mode
   assert.equal(h.spawned[0].args.includes('--header-file'), false);
   assert.match(h.errs.join(''), /OAuth/);
   assert.deepEqual(h.ops, ['rm']);
-  assert.equal(h.rms[0].p, `/data/${HEADER_FILE_NAME}`);
+  assert.equal(h.rms[0].p, HEADERS);
   assert.deepEqual(h.rms[0].opts, { force: true });
 });
 
@@ -151,4 +156,18 @@ test('the child exit code is forwarded', async () => {
   const { spawnImpl } = fakeSpawn(7);
   const h = base({ spawnImpl });
   assert.equal(await main(h.deps), 7);
+});
+
+test('the header file name carries the pid, so a second bridge touches only its own', async () => {
+  const mine = base({ pid: 111 });
+  const theirs = base({ pid: 222 });
+  assert.equal(await main(mine.deps), 0);
+  assert.equal(await main(theirs.deps), 0);
+  assert.equal(mine.writes[0].p, '/data/mcp-remote-111.headers');
+  assert.equal(theirs.writes[0].p, '/data/mcp-remote-222.headers');
+  for (const call of mine.rms) assert.equal(call.p, '/data/mcp-remote-111.headers');
+  for (const call of theirs.rms) assert.equal(call.p, '/data/mcp-remote-222.headers');
+  const none = base({ pid: 333, resolve: async () => ({ key: null, source: 'none', configPath: '/cfg' }) });
+  assert.equal(await main(none.deps), 0);
+  assert.deepEqual(none.rms.map((r) => r.p), ['/data/mcp-remote-333.headers']);
 });

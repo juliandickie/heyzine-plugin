@@ -125,3 +125,20 @@ test('verifyLive reports a fetch failure as status 0 rather than throwing', asyn
   const boom = async () => { throw new Error('socket hang up'); };
   assert.deepEqual(await verifyLive(['https://x/a.html', ''], { fetch: boom }), [{ url: 'https://x/a.html', status: 0, ok: false, error: 'socket hang up' }]);
 });
+
+test('a convert answer without an id stops the flow instead of publishing an undefined id', async () => {
+  const client = fakeClient();
+  client.convertAsync = async (p) => { client.calls.push(['convertAsync', p]); return { url: 'https://heyzine.com/flip-book/abcdefabcd.html', state: 'processed' }; };
+  await assert.rejects(
+    publishOne(ctxOf(client), { source: 'https://x/a.pdf', name: 'Doc', purpose: 'other' }),
+    (e) => e.code === 'unknown' && e.message === 'Heyzine returned no flipbook id',
+  );
+  assert.deepEqual(client.calls.map((c) => c[0]), ['convertAsync']);
+  const blocking = fakeClient();
+  blocking.convertSync = async (p) => { blocking.calls.push(['convertSync', p]); return { url: 'u' }; };
+  await assert.rejects(
+    publishOne(ctxOf(blocking), { source: 'https://x/a.pdf', name: 'Doc', purpose: 'other', replace: true }),
+    (e) => e.code === 'unknown' && e.message === 'Heyzine returned no flipbook id',
+  );
+  assert.deepEqual(blocking.calls.map((c) => c[0]), ['convertSync']);
+});

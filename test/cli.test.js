@@ -1,15 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { main, COMMANDS, designFields, parseBool } from '../lib/cli.mjs';
+import { main, COMMANDS, designFields, parseBool, requireNumber } from '../lib/cli.mjs';
 
 const ID = '<short>91f3029d392b65eaf26a5815e3b4e5.pdf';
 const SHELF = 'a16ec9269b8d436092e69be09a107d1d264e9f18';
 
-function harness({ client = {}, key = 'K', settings = {}, files = {} } = {}) {
+// A stdin double - an async iterable of chunks, the shape process.stdin has.
+const stdinOf = (...chunks) => (async function* stream() { for (const chunk of chunks) yield chunk; })();
+
+function harness({ client = {}, key = 'K', settings = {}, files = {}, stdin } = {}) {
   const out = []; const err = []; const written = {};
   const deps = {
     env: { HEYZINE_PLUGIN_DATA: '/data' },
-    stdout: { write: (s) => out.push(s) }, stderr: { write: (s) => err.push(s) },
+    stdout: { write: (s) => out.push(s) }, stderr: { write: (s) => err.push(s) }, stdin,
     resolveKey: async () => ({ key, source: key ? 'file' : 'none', configPath: '/cfg' }),
     resolveSettings: async () => ({ configPath: '/cfg', configExists: true, clientId: 'cid', publicHost: 'docs.aflip.in', templateId: '', urlDomain: '', stagingFolderId: '', defaultTags: '', ...settings }),
     makeClient: () => client,
@@ -275,4 +278,104 @@ test('reconcile --csv renders the spreadsheet shape', async () => {
   assert.match(lines[1], /https:\/\/idd\.aflip\.in\/<short>\.html/);
   assert.match(lines[1], /<short> Medit i900 Intraoral Scanner Review \(exact\)/);
   assert.match(lines[2], /^Missing One,missing,/);
+});
+
+test('requireNumber accepts finite numbers and refuses everything else', () => {
+  assert.equal(requireNumber('2', '--position'), 2);
+  assert.equal(requireNumber('0', '--position'), 0);
+  assert.equal(requireNumber('-1.5', '--position'), -1.5);
+  for (const bad of ['two', '', '   ', undefined, null, 'NaN', 'Infinity', '1px']) {
+    assert.throws(() => requireNumber(bad, '--position'), (e) => e.code === 'usage' && /--position must be a number/.test(e.message));
+  }
+});
+
+test('a non-numeric --position is a usage error and nothing is added to the shelf', async () => {
+  const calls = [];
+  const client = {
+    listFlipbooks: async () => [{ id: ID, title: 'Doc' }],
+    listBookshelves: async () => [{ id: SHELF, title: 'PCP' }],
+    addToBookshelf: async (...args) => { calls.push(args); return { success: true }; },
+  };
+  const h = harness({ client });
+  assert.equal(await main(['shelf-add', SHELF, ID, '--position', 'two'], h.deps), 2);
+  assert.match(h.errText(), /usage: --position must be a number, got "two"/);
+  assert.deepEqual(calls, [], 'addToBookshelf must never be reached');
+  const ok = harness({ client });
+  assert.equal(await main(['shelf-add', SHELF, ID, '--position', '3'], ok.deps), 0);
+  assert.deepEqual(calls, [[SHELF, ID, 3]]);
+});
+
+test('a non-numeric page, limit, offset, maxwidth, maxheight or concurrency exits 2', async () => {
+  const client = { listFlipbooks: async () => [{ id: ID }], pageText: async () => 'text', oembed: async () => ({ html: '' }) };
+  const cases = [
+    [['page-text', ID, 'x'], /<page> must be a number, got "x"/],
+    [['list', '--limit', 'ten'], /--limit must be a number/],
+    [['list', '--offset', 'ten'], /--offset must be a number/],
+    [['oembed', 'https://heyzine.com/flip-book/<short>.html', '--maxwidth', 'wide'], /--maxwidth must be a number/],
+    [['oembed', 'https://heyzine.com/flip-book/<short>.html', '--maxheight', 'tall'], /--maxheight must be a number/],
+  ];
+  for (const [argv, pattern] of cases) {
+    const h = harness({ client });
+    assert.equal(await main(argv, h.deps), 2, argv.join(' '));
+    assert.match(h.errText(), /usage: /);
+    assert.match(h.errText(), pattern);
+  }
+  const batch = harness({ client, files: { '/in/batch.csv': 'name,source\nOne,https://x/1.pdf\n' } });
+  assert.equal(await main(['batch', '/in/batch.csv', '--concurrency', 'lots'], batch.deps), 2);
+  assert.match(batch.errText(), /usage: --concurrency must be a number/);
+});
+
+test('--password-stdin keeps the password out of the argv and out of the output', async () => {
+  const calls = [];
+  const client = { listFlipbooks: async () => [{ id: ID }], accessAdd: async (p) => { calls.push(p); return { success: true, msg: 'Access entry added' }; } };
+  const h = harness({ client, stdin: stdinOf('Sekrit9\n') });
+  assert.equal(await main(['access-add', ID, '--access-type', 'pass_only', '--password-stdin'], h.deps), 0);
+  assert.deepEqual(calls[0], { id: ID, access_type: 'pass_only', password: 'Sekrit9' });
+  assert.equal(h.text().includes('Sekrit9'), false);
+  assert.equal(h.errText().includes('Sekrit9'), false);
+});
+
+test('--password-stdin works on access-setup and access-remove, takes the first line only, and refuses an empty one', async () => {
+  const calls = [];
+  const client = {
+    listFlipbooks: async () => [{ id: ID }],
+    accessSetup: async (p) => { calls.push(p); return { success: true }; },
+    accessRemove: async (p) => { calls.push(p); return { success: true }; },
+  };
+  const setup = harness({ client, stdin: stdinOf('Shared1\r\ntrailing junk\n') });
+  assert.equal(await main(['access-setup', ID, '--mode', 'everyone', '--password-stdin'], setup.deps), 0);
+  assert.deepEqual(calls[0], { id: ID, mode: 'everyone', password: 'Shared1' });
+  const remove = harness({ client, stdin: stdinOf(Buffer.from('Sekrit9\n')) });
+  assert.equal(await main(['access-remove', ID, '--password-stdin'], remove.deps), 0);
+  assert.deepEqual(calls[1], { id: ID, password: 'Sekrit9' });
+  const empty = harness({ client, stdin: stdinOf('\n') });
+  assert.equal(await main(['access-add', ID, '--access-type', 'pass_only', '--password-stdin'], empty.deps), 2);
+  assert.match(empty.errText(), /usage: --password-stdin read an empty password/);
+  const both = harness({ client, stdin: stdinOf('Sekrit9\n') });
+  assert.equal(await main(['access-add', ID, '--access-type', 'pass_only', '--password', 'x', '--password-stdin'], both.deps), 2);
+  assert.match(both.errText(), /usage: Pass either --password or --password-stdin, not both/);
+});
+
+test('the live id fallback pages through the whole account, not just the first page', async () => {
+  const page1 = Array.from({ length: 200 }, (_, i) => ({ id: `${String(i).padStart(4, '0')}${'a'.repeat(36)}.pdf`, title: `Doc ${i}` }));
+  const wanted = { id: ID, title: 'On page two', links: { base: 'https://heyzine.com/flip-book/<short>.html', custom: 'https://heyzine.com/flip-book/<short>.html' } };
+  const queries = [];
+  const client = {
+    listFlipbooks: async (q = {}) => { queries.push(q); return queries.length === 1 ? page1 : [wanted]; },
+    listBookshelves: async () => [],
+    flipbookDetails: async (id) => ({ ...wanted, id, tags: '', private: '' }),
+  };
+  const h = harness({ client });
+  assert.equal(await main(['details', '<short>', '--json'], h.deps), 0);
+  assert.equal(JSON.parse(h.text()).id, ID);
+  assert.deepEqual(queries.map((q) => q.offset), [0, 200]);
+});
+
+test('an inventory cache of the wrong shape is unreadable, not an empty account', async () => {
+  // A file holding a literal null is indistinguishable from an absent one and refreshes instead.
+  for (const body of ['{"count":0}', '[]', '{"items":{},"bookshelves":[]}', '{"items":[]}', '{"bookshelves":[]}']) {
+    const h = harness({ client: { listFlipbooks: async () => [] }, files: { '/data/inventory.json': body } });
+    assert.equal(await main(['inventory'], h.deps), 2, body);
+    assert.match(h.errText(), /usage: Inventory cache is unreadable .* run: heyzine inventory --refresh/);
+  }
 });

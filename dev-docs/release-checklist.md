@@ -7,7 +7,7 @@
    `.claude-plugin/marketplace.json`, `package.json`, `CHANGELOG.md` (move the unreleased
    section under the version and date).
 4. Commit on main. Pushing, tagging (`vX.Y.Z`, annotated), and listing in the outfit and
-   ai-loadout catalogs (both marketplace.json files and both README tables, same order)
+   ai-loadout catalogues (both marketplace.json files and both README tables, same order)
    are separate actions each needing the operator's go.
 5. After a listing change, reinstall locally and confirm the cache version, then run
    `heyzine whoami` from a terminal session and confirm the MCP tools appear (desktop

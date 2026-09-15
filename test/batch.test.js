@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rowToSpec, runBatch, resultsCsv, RESULT_COLUMNS } from '../lib/batch.mjs';
+import { rowToSpec, runBatch, resultsCsv, RESULT_COLUMNS, coerceBool } from '../lib/batch.mjs';
 
 test('rowToSpec maps csv columns and coerces booleans', () => {
   const spec = rowToSpec({ name: 'Doc', source: '1AbCdEfGhIjKlM', purpose: 'course-material', course: 'PCP', idd_to: 'pcp-doc', template: 't.pdf', download: 'true', tags: 'summer', note: 'n', description: 'd', replace: 'yes', url_path: 'p' });
@@ -61,4 +61,34 @@ test('a malformed row fails that row only, the rest of the batch completes', asy
   assert.equal(results[2].name, '');
   assert.match(results[2].error, /^error: /);
   assert.deepEqual(summary, { total: 4, converted: 2, replaced: 0, skipped: 0, failed: 2 });
+});
+
+test('an unrecognised boolean cell throws instead of reading as false', () => {
+  assert.equal(coerceBool('', 'download'), undefined);
+  assert.equal(coerceBool('   ', 'download'), undefined);
+  assert.equal(coerceBool(undefined, 'download'), undefined);
+  assert.equal(coerceBool('Yes', 'download'), true);
+  assert.equal(coerceBool('N', 'download'), false);
+  assert.throws(
+    () => rowToSpec({ name: 'X', source: 'u', download: 'yes please' }),
+    (e) => e.code === 'validation' && e.message === 'column download has an unrecognised boolean value "yes please"',
+  );
+  assert.throws(
+    () => rowToSpec({ name: 'X', source: 'u', replace: 'maybe' }),
+    (e) => e.code === 'validation' && /column replace has an unrecognised boolean value "maybe"/.test(e.message),
+  );
+});
+
+test('a row with an unrecognised boolean fails that row only', async () => {
+  const publish = async (ctx, spec) => ({ id: `${spec.name}.pdf`, short: 'x', url: 'u', base: 'b', pages: 1 });
+  const rows = [
+    { name: 'Fine', source: 'https://x/1.pdf' },
+    { name: 'Typo', source: 'https://x/2.pdf', download: 'yes please' },
+    { name: 'Also fine', source: 'https://x/3.pdf' },
+  ];
+  const { results, summary } = await runBatch({}, rows, { concurrency: 2, publish });
+  assert.deepEqual(results.map((r) => r.status), ['converted', 'failed', 'converted']);
+  assert.equal(results[1].error, 'validation: column download has an unrecognised boolean value "yes please"');
+  assert.equal(results[1].name, 'Typo');
+  assert.deepEqual(summary, { total: 3, converted: 2, replaced: 0, skipped: 0, failed: 1 });
 });

@@ -29,6 +29,17 @@ Initial build.
 - Three MCP tools surfaced that the public developers page does not document -
   `heyzine_replace_flipbook_pdf`, `heyzine_search_text` and `heyzine_page_text`. The last
   two back the CLI's `search` and `page-text` commands, which have no REST equivalent.
+- The final review wave, 2026-09-15 - every request carries an abort timeout (60 s, 15 min
+  for the blocking replace) and reports `timeout` without retrying; transient retries are
+  narrowed to GET and the two convert endpoints, so no write is ever attempted twice;
+  numeric flags and the `page-text` page argument are refused unless they are numbers;
+  `access-setup`, `access-add` and `access-remove` accept `--password-stdin`; an
+  unrecognised boolean cell fails its batch row instead of reading as false; source URLs
+  in error messages are printed without their query string; the MCP header file is named
+  per process id so parallel bridges cannot delete each other's; and four guards land -
+  a convert answer with no id, a live id lookup that pages the whole account, an
+  inventory cache of the wrong shape, and the `op` child process no longer inheriting
+  the key or a pointer to it.
 - The replace path, proven live on 2026-09-15 - `replace: true` is honoured only by the
   blocking endpoints, so `--replace` runs on REST `/rest` and ignores `--wait`. The id,
   both public URLs, the title, the tags and the private note survive a replace. Recorded

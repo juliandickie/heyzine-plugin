@@ -55,3 +55,17 @@ test('timeout throws with the id and says to poll again', async () => {
   );
   assert.ok(client.calls.length >= 3 && client.calls.length <= 4);
 });
+
+test('the conversion_failed and timeout messages drop the query string of the source URL', async () => {
+  const failing = scriptedClient(['failed']);
+  await assert.rejects(
+    convertAndWait(failing, { pdf: 'https://x/y.pdf?token=abc#page=2', client_id: 'c' }, { sleep: async () => {} }),
+    (e) => e.code === 'conversion_failed' && e.message.includes('https://x/y.pdf') && !e.message.includes('token') && !e.message.includes('#page'),
+  );
+  const slow = scriptedClient(['started']);
+  let clock = 0;
+  await assert.rejects(
+    convertAndWait(slow, { pdf: 'https://x/y.pdf?token=abc', client_id: 'c' }, { intervalMs: 1000, timeoutMs: 2000, sleep: async (ms) => { clock += ms; }, now: () => clock }),
+    (e) => e.code === 'timeout' && e.message.includes('https://x/y.pdf') && !e.message.includes('token'),
+  );
+});

@@ -53,9 +53,10 @@ developers page and the live server differ, the live server wins and is noted.
 | `mcp <tool> --args '{json}'` | any MCP tool by name |
 | `inventory [--refresh]`, `reconcile <file> [--csv]`, `batch <csv> [--out path]` | see the inventory and batch-convert skills |
 
-`--replace` on `convert` and on `publish` runs on the blocking `/rest` endpoint, so it
-ignores `--wait` and prints a notice saying so; the async endpoint accepts the flag but
-leaves the stored document unchanged.
+`convert --replace` runs on the blocking `/rest` endpoint, so it ignores `--wait` and
+prints a notice saying so. `publish --replace` uses the same blocking endpoint silently,
+it has no `--wait` flag of its own. The async endpoint accepts the flag but leaves the
+stored document unchanged.
 
 `reconcile --csv` writes rows with columns name, status, id, short, title, url, idd_to,
 candidates instead of the default table. `batch --out <path>` chooses where the results
@@ -69,6 +70,13 @@ Design flags - `--title --subtitle --description --private-note --tags --templat
 effects - magazine, book, album, notebook, fade, cards, coverflow, flip (aliases
 slideshow = fade, onepage = flip). Exit codes - 0 ok, 1 API or conversion error, 2
 configuration or usage (no key, no client id, bad arguments), 3 refused.
+
+Requests time out after 60 s (15 min for a blocking replace) with the `timeout` code;
+only GET and the two convert endpoints are retried on transient errors. Numeric flags
+(`--position`, `--limit`, `--offset`, `--maxwidth`, `--maxheight`, `--concurrency`, and
+the `page-text` page argument) are refused as usage errors unless they are numbers.
+`access-setup`, `access-add` and `access-remove` take `--password-stdin` as well as
+`--password`, which keeps the value out of the process list and the transcript.
 
 ## REST endpoints
 
@@ -122,7 +130,8 @@ See [plans.md](plans.md) for the full matrix. Short form - bookshelves, own DNS 
 and one-time email access need Premium; custom URL path and subdomain, statistics and
 lead forms need Professional; logos need Standard; `flipbook-replace` needs support
 enablement on any paid plan. Free keeps five flipbooks. Fair use, no published rate
-limit; the CLI retries 429 and 5xx three times with backoff.
+limit; the CLI retries 429 and 5xx three times with backoff on GET and the two convert
+endpoints, and never on a write.
 
 ## curl examples
 

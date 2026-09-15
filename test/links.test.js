@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   isFullFlipbookId, isFullBookshelfId, shortId, parseId, publicUrl,
-  driveFileId, driveDirectUrl, linkConversionUrl, DRIVE_URL_FORMS,
+  driveFileId, driveDirectUrl, linkConversionUrl, DRIVE_URL_FORMS, safeUrl,
 } from '../lib/links.mjs';
 
 const FULL = '<short>91f3029d392b65eaf26a5815e3b4e5.pdf';
@@ -79,4 +79,13 @@ test('linkConversionUrl encodes parameters and maps booleans to 1 and 0', () => 
   assert.equal(u.searchParams.get('tpl'), 'abc.pdf');
   assert.equal(u.searchParams.has('lg'), false);
   assert.throws(() => linkConversionUrl('https://x/y.pdf', ''), /clientId is required/);
+});
+
+test('safeUrl drops the query string and the fragment', () => {
+  assert.equal(safeUrl('https://x/y.pdf?token=abc'), 'https://x/y.pdf');
+  assert.equal(safeUrl('https://x/y.pdf?token=abc#page=2'), 'https://x/y.pdf');
+  assert.equal(safeUrl('https://drive.usercontent.google.com/download?id=abc&export=download'), 'https://drive.usercontent.google.com/download');
+  assert.equal(safeUrl('https://x/y.pdf'), 'https://x/y.pdf');
+  assert.equal(safeUrl('not a url?token=abc'), 'not a url');
+  assert.equal(safeUrl(undefined), '');
 });

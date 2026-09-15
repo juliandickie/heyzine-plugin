@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HeyzineError, classify, HeyzineClient } from '../lib/client.mjs';
+import { HeyzineError, classify, HeyzineClient, retriesTransient, DEFAULT_TIMEOUT_MS, CONVERT_TIMEOUT_MS } from '../lib/client.mjs';
 
 function fakeFetch(script) {
   const calls = [];
@@ -145,4 +145,56 @@ test('a per-call backoffMs of [] stops the retry loop after one fetch', async ()
   await assert.rejects(c.request('GET', 'flipbook-list', { backoffMs: [] }), (e) => e.code === 'transient');
   assert.equal(calls.length, 1);
   assert.deepEqual(slept, []);
+});
+
+test('every request carries an abort signal and an abort maps to timeout without a retry', async () => {
+  const { fetch, calls } = fakeFetch(() => Object.assign(new Error('The operation was aborted'), { name: 'AbortError' }));
+  const c = new HeyzineClient({ key: 'K', fetch, sleep: noSleep });
+  await assert.rejects(
+    c.listFlipbooks(),
+    (e) => e.code === 'timeout' && /flipbook-list did not answer within 60000 ms/.test(e.message) && e.retryable === false,
+  );
+  assert.equal(calls.length, 1, 'a timeout is never retried');
+  assert.ok(calls[0].init.signal instanceof AbortSignal);
+  assert.equal(DEFAULT_TIMEOUT_MS, 60000);
+  assert.equal(CONVERT_TIMEOUT_MS, 900000);
+});
+
+test('convertSync passes the long blocking timeout down to the fetch signal', async () => {
+  const signals = [];
+  const hang = async (url, init) => {
+    signals.push(init.signal);
+    return new Promise((resolve, reject) => { init.signal.addEventListener('abort', () => reject(init.signal.reason)); });
+  };
+  assert.equal(new HeyzineClient({ key: 'K', fetch: hang }).convertTimeoutMs, 900000);
+  const c = new HeyzineClient({ key: 'K', fetch: hang, sleep: noSleep, convertTimeoutMs: 20 });
+  await assert.rejects(
+    c.convertSync({ pdf: 'u', client_id: 'c' }),
+    (e) => e.code === 'timeout' && /rest did not answer within 20 ms/.test(e.message) && e.retryable === false,
+  );
+  assert.equal(signals.length, 1);
+  assert.ok(signals[0] instanceof AbortSignal);
+});
+
+test('only GET and the two convert endpoints retry a transient failure', async () => {
+  assert.equal(retriesTransient('GET', 'flipbook-list'), true);
+  assert.equal(retriesTransient('POST', 'async'), true);
+  assert.equal(retriesTransient('POST', 'rest'), true);
+  for (const [method, endpoint] of [['POST', 'bookshelf-add'], ['POST', 'flipbook-delete'], ['PATCH', 'flipbook-design'], ['POST', 'access-add']]) {
+    assert.equal(retriesTransient(method, endpoint), false, `${method} ${endpoint}`);
+  }
+  const slept = [];
+  const { fetch, calls } = fakeFetch(() => ({ status: 503, body: 'busy' }));
+  const c = new HeyzineClient({ key: 'K', fetch, sleep: async (ms) => { slept.push(ms); } });
+  await assert.rejects(c.addToBookshelf('s', 'a.pdf', 1), (e) => e.code === 'transient' && e.status === 503);
+  assert.equal(calls.length, 1, 'a write is attempted exactly once');
+  assert.deepEqual(slept, []);
+  const { fetch: convertFetch, calls: convertCalls } = fakeFetch([{ status: 503, body: 'busy' }, { body: { id: 'a.pdf', state: 'started' } }]);
+  const d = new HeyzineClient({ key: 'K', fetch: convertFetch, sleep: noSleep });
+  assert.equal((await d.convertAsync({ pdf: 'u', client_id: 'c' })).id, 'a.pdf');
+  assert.equal(convertCalls.length, 2, 'the convert endpoints still retry');
+  const { fetch: forced, calls: forcedCalls } = fakeFetch(() => ({ status: 503, body: 'busy' }));
+  const e = new HeyzineClient({ key: 'K', fetch: forced, sleep: noSleep });
+  await assert.rejects(e.request('POST', 'bookshelf-add', { body: {}, backoffMs: [1] }), (err) => err.code === 'transient');
+  assert.equal(forcedCalls.length, 2, 'a per-call backoffMs still forces retries on');
 });

@@ -7,6 +7,8 @@
 // child exits, so it exists only for the life of one mcp-remote process. It holds a live
 // credential in plain text and must never be copied, backed up, committed or otherwise
 // moved out of the plugin data dir. The key is also stripped from the child's environment.
+// The name carries this process's pid, so two bridges running at once (two sessions, or a
+// desktop and a terminal one) never share, overwrite or delete each other's file.
 import { writeFile, mkdir, chmod, rm } from 'node:fs/promises';
 import { existsSync, realpathSync } from 'node:fs';
 import { spawn } from 'node:child_process';
@@ -15,7 +17,9 @@ import { fileURLToPath } from 'node:url';
 import { resolveKey, dataDir, ConfigError } from '../lib/config.mjs';
 
 export const MCP_URL = 'https://heyzine.com/mcp';
-export const HEADER_FILE_NAME = 'mcp-remote.headers';
+export const HEADER_FILE_PREFIX = 'mcp-remote';
+
+export function headerFileName(pid) { return `${HEADER_FILE_PREFIX}-${pid}.headers`; }
 
 // Variables that can carry the key or a pointer to it. The child reads its credential from
 // the header file, so none of these have any business in its environment.
@@ -40,7 +44,7 @@ export function childEnv(env) {
 
 export async function main({
   env = process.env, resolve = resolveKey, write = writeFile, mkdirp = mkdir, chmodImpl = chmod, rmImpl = rm, exists = existsSync,
-  spawnImpl = spawn, stderr = process.stderr, execPath = process.execPath,
+  spawnImpl = spawn, stderr = process.stderr, execPath = process.execPath, pid = process.pid,
   onSignal = (handler) => { for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => handler(sig)); },
 } = {}) {
   const dir = dataDir({ env });
@@ -60,18 +64,19 @@ export async function main({
     stderr.write('heyzine: API key must be a single line\n');
     return 2;
   }
-  const staleFile = path.join(dir, HEADER_FILE_NAME);
+  // Only ever this process's own file, never a sibling bridge's.
+  const ownFile = path.join(dir, headerFileName(pid));
   let headerFile = null;
   if (key) {
-    headerFile = staleFile;
+    headerFile = ownFile;
     await mkdirp(dir, { recursive: true });
     await rmImpl(headerFile, { force: true });
     await write(headerFile, `Authorization: Bearer ${key}\n`, { mode: 0o600, flag: 'wx' });
     await chmodImpl(headerFile, 0o600);
   } else {
-    // A header file left by an earlier run would still hold a live key, and mcp-remote is
-    // about to run OAuth instead, so nothing will overwrite it. Clear it now.
-    await rmImpl(staleFile, { force: true });
+    // A file left by an earlier run under this pid would still hold a live key, and mcp-remote
+    // is about to run OAuth instead, so nothing will overwrite it. Clear it now.
+    await rmImpl(ownFile, { force: true });
     stderr.write('heyzine: no API key configured - starting mcp-remote in OAuth mode (a browser sign-in opens). Run /heyzine:setup to store a key for unattended use.\n');
   }
   const child = spawnImpl(execPath, buildArgv({ proxy, headerFile }), { stdio: 'inherit', env: childEnv(env) });

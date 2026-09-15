@@ -9,14 +9,18 @@ argument-hint: "<batch.csv> [--yes] [--concurrency 2]"
 
 ## 1. Build the CSV
 
-Columns (template at `${CLAUDE_SKILL_DIR}/batch-template.csv`) -
+Columns (template at `${CLAUDE_PLUGIN_ROOT}/skills/batch-convert/batch-template.csv`) -
 `name, source, purpose, course, idd_to, template, download, tags, note, description, replace, url_path, embedded`.
 `source` is a Drive file id or link, or a public URL; local files are staged first
 with the Scribe plugin's Drive tools into the staging folder, named after the
 resource, shared anyone-with-link, and their ids written into the column. From a
 Google Sheet, export the rows with the Scribe plugin's Sheets tools into the CSV.
 `download` and `replace` take true or false. Empty cells fall back to the purpose
-defaults and the configured template.
+defaults and the configured template. A non-empty cell in a boolean column that is
+neither (anything outside true, 1, yes, y, false, 0, no, n) fails that row with
+`validation: column <name> has an unrecognised boolean value "..."` rather than reading
+as false, so a typo shows up in the results CSV instead of quietly publishing the wrong
+design.
 
 The `tags` column cannot carry facet-shaped values (`purpose:`, `course:`, `link:`
 and the rest) - they are stripped silently the same way `--tags` is on a single
@@ -41,8 +45,10 @@ heyzine batch <batch.csv> --yes --concurrency 2 [--skip-verify] --json
 ```
 
 Add `--skip-verify` to skip the per-row live GET of both public URLs when the batch is
-large and you will verify a sample by eye afterwards; without it every row is checked
-and the verify column in the results shows the outcome.
+large and you will verify a sample by eye afterwards. Without it every converted row is
+checked, but the check does not change the row's status - a row whose URLs do not answer
+200 is still reported `converted`, with both URLs in the results so the operator can open
+them. There is no verify column in the results CSV; read the status, then open the URLs.
 
 Progress goes to stderr one line per row. Each row runs the same source preflight as
 a single publish - a non-public Drive file fails that row alone with a content-type

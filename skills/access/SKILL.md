@@ -55,6 +55,11 @@ the flipbook's private note, tags, a share kit, or a file unless the user explic
 asks for a credential document. Repeat a shared password in chat only when the user
 needs it for distribution. The CLI never echoes passwords in its output.
 
+A password given with `--password` appears in the process list and in the session
+transcript on disk. Prefer `--password-stdin` and pipe the value in (for example
+`printf '%s\n' "$PW" | heyzine access-add <id> --access-type pass_only --password-stdin`),
+which keeps it out of both.
+
 ## Report
 
 State the publication, the resulting mode, and each entry added or removed. Before

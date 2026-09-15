@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import {
   ConfigError, present, parseToml, configPath, readConfigFile, findOp, readOpRef,
-  resolveKey, resolveSettings, dataDir, OP_TIMEOUT_MS,
+  resolveKey, resolveSettings, dataDir, OP_TIMEOUT_MS, makeExecOp, opChildEnv, OP_SECRET_ENV,
 } from '../lib/config.mjs';
 
 const home = () => '/home/tester';
@@ -108,4 +108,28 @@ test('dataDir prefers HEYZINE_PLUGIN_DATA, then CLAUDE_PLUGIN_DATA, then the def
   assert.equal(dataDir({ env: { HEYZINE_PLUGIN_DATA: '/d1', CLAUDE_PLUGIN_DATA: '/d2' } }), '/d1');
   assert.equal(dataDir({ env: { CLAUDE_PLUGIN_DATA: '/d2' } }), '/d2');
   assert.equal(dataDir({ env: {}, homedir: home }), '/home/tester/.claude/plugins/data/heyzine');
+});
+
+test('the op child process inherits no key and no pointer to one', async () => {
+  const seen = [];
+  const env = {
+    PATH: '/usr/bin', HOME: '/home/tester',
+    HEYZINE_API_KEY: 'SECRET', HEYZINE_KEY_OP_REF: 'op://V/I/f', HEYZINE_OP_ACCOUNT: 'team.1password.com',
+    CLAUDE_PLUGIN_OPTION_HEYZINE_API_KEY: 'SECRET', CLAUDE_PLUGIN_OPTION_HEYZINE_KEY_OP_REF: 'op://V/I/f',
+    CLAUDE_PLUGIN_OPTION_HEYZINE_OP_ACCOUNT: 'team.1password.com',
+  };
+  const execFileImpl = (bin, args, options, cb) => { seen.push({ bin, args, options }); cb(null, 'from-op\n', ''); };
+  const execOp = makeExecOp({ execFileImpl, env });
+  assert.equal(await execOp('/bin/op', ['read', '--', 'op://V/I/f']), 'from-op');
+  const childEnv = seen[0].options.env;
+  for (const name of OP_SECRET_ENV) assert.equal(name in childEnv, false, `${name} should not reach op`);
+  assert.equal(childEnv.PATH, '/usr/bin');
+  assert.equal(childEnv.HOME, '/home/tester');
+  assert.equal(env.HEYZINE_API_KEY, 'SECRET', 'the caller env must not be mutated');
+  assert.equal(seen[0].options.timeout, OP_TIMEOUT_MS);
+  const fromProcess = makeExecOp({ execFileImpl });
+  await fromProcess('/bin/op', ['read']);
+  assert.equal(seen[1].options.env.PATH, process.env.PATH, 'the default env is this process own');
+  for (const name of OP_SECRET_ENV) assert.equal(name in seen[1].options.env, false);
+  assert.equal('HEYZINE_API_KEY' in opChildEnv({ HEYZINE_API_KEY: 'x', PATH: '/p' }), false);
 });

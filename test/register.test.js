@@ -55,4 +55,6 @@ test('buildRegister produces the spec section 5 shape', () => {
   assert.equal(u.tags, 'purpose:lead-magnet,source:url,published-by:heyzine-plugin');
   assert.match(u.private_note, /^source_url = https:\/\/x\/y\.pdf\n/);
   assert.throws(() => buildRegister({ purpose: 'nope' }), /purpose must be one of/);
+  assert.throws(() => buildRegister({ sourceUrl: 'https://x/y.pdf' }), /purpose must be one of/);
+  assert.throws(() => buildRegister({ purpose: 'other' }), /sourceDriveId or sourceUrl/);
 });

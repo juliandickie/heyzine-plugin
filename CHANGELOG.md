@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 - 2026-09-15
+
+- Fix - the manifest no longer names `hooks/hooks.json` under `hooks`. Claude Code loads
+  that file on its own, and naming it too made the installed 0.1.0 fail to load with a
+  duplicate hooks error. `claude plugin validate` does not catch this; only an install does.
+
 ## 0.1.0 - 2026-09-15
 
 Initial build.

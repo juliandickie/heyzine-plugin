@@ -14,20 +14,23 @@ capability reference in skill prose, never by importing their tools.
 
 ## Repo Layout Rules
 
-Component dirs at plugin root - skills, scripts, bin, lib, test, hooks.
-.claude-plugin holds only plugin.json and marketplace.json. Use
-${CLAUDE_PLUGIN_ROOT} for bundled paths and ${CLAUDE_PLUGIN_DATA} for anything
-written at runtime (mcp-remote, the header file, the inventory cache).
-docs/ is gitignored and local-only (spec, plan, probe artifacts). dev-docs/ is
-tracked - dated, additive logs (API audits, smoke records, release checklist).
+Seven dirs at the plugin root - lib/ (the modules), bin/ (the `heyzine` entry
+point), scripts/ (run-mcp.mjs and install-deps.sh), hooks/ (hooks.json), skills/
+(the ten skills), test/ (one file per lib module plus the launcher contract),
+dev-docs/ (tracked, dated, additive logs - API audits, smoke records, the
+release checklist). .claude-plugin holds only plugin.json and marketplace.json.
+Use ${CLAUDE_PLUGIN_ROOT} for bundled paths and ${CLAUDE_PLUGIN_DATA} for
+anything written at runtime (mcp-remote, the header file, the inventory cache).
+docs/ is gitignored and local-only (spec, plan, probe artifacts).
 
 ## Build and Test
 
 ESM, Node 24, built-ins only. `npm test` runs `node --test test/*.test.js`
-(the only form that works on Node 24 here). Every module in lib/ takes its side
-effects (fs, exec, fetch, clock) as injectable parameters and is unit tested
-without network. The launcher test asserts the security contract - the key is
-written to a 0600 header file and never appears in argv.
+(the only form that works on Node 24 here); `claude plugin validate .` is the
+other gate. Every module in lib/ takes its side effects (fs, exec, fetch, clock)
+as injectable parameters and is unit tested without network. The launcher test
+asserts the security contract - the key is written to a 0600 header file, never
+appears in argv, and is stripped from the child environment.
 
 ## Versioning
 

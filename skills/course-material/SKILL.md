@@ -52,8 +52,8 @@ never the URL or the filename.
 ## 4. Hand off to LearnDash
 
 This plugin does not write to WordPress. Hand the snippet, the chapter id and the
-lesson id to the academy tooling - the LearnDash settings updater in idd-blog-index
-(`LD.update_settings`, snapshot first, never a bare Materials POST) - or to the
+lesson id to the academy tooling - the academy's LearnDash settings tooling
+(snapshot first, never a bare Materials POST) - or to the
 wp-manager plugin for plain pages. Rules that travel with the handoff:
 
 - Materials go on the chapter AND the lesson.

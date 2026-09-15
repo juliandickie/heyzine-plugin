@@ -37,8 +37,12 @@ that go.
 ## 3. Run
 
 ```bash
-heyzine batch <batch.csv> --yes --concurrency 2 --json
+heyzine batch <batch.csv> --yes --concurrency 2 [--skip-verify] --json
 ```
+
+Add `--skip-verify` to skip the per-row live GET of both public URLs when the batch is
+large and you will verify a sample by eye afterwards; without it every row is checked
+and the verify column in the results shows the outcome.
 
 Progress goes to stderr one line per row. Each row runs the same source preflight as
 a single publish - a non-public Drive file fails that row alone with a content-type

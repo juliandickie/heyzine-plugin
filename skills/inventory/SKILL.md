@@ -12,7 +12,8 @@ argument-hint: "[--refresh | reconcile <names file> | search <text>]"
 (tags, private note, links, oEmbed) into `inventory.json` in the plugin data dir, with
 `fetched_at`. About a minute for a hundred flipbooks. `heyzine inventory --json` reads
 the cache. Refresh before any reconcile or batch, and whenever the account changed
-outside the plugin.
+outside the plugin. The refresh pages the account list at 200 flipbooks per call and
+dedupes by id, so large accounts are read completely.
 
 Each item carries `short`, `title`, `pages`, `date`, `tags`, `public_url` (public
 host) and `register` (the parsed note - `source_drive_id`, `idd_to`, `embedded`,

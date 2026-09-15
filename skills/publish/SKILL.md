@@ -11,9 +11,8 @@ work in this skill is getting the source staged, choosing the purpose, and verif
 
 ## 1. Resolve the source
 
-- A public URL - use it as is. Run
-  `node -e` is not needed; the CLI checks it. If the user gives a page URL rather than
-  the file, ask for the file link.
+- A public URL - use it as is; the CLI preflight checks it. If the user gives a page URL
+  rather than the file, ask for the file link.
 - A Google Drive file link or id - use it directly; the CLI builds the direct download
   URL. Confirm the file is shared anyone-with-link (Scribe plugin's permission check).
 - A local file - stage it first with the Scribe plugin's Drive tools: upload into the

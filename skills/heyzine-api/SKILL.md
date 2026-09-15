@@ -40,7 +40,7 @@ developers page and the live server differ, the live server wins and is noted.
 | `details <id>` | `GET flipbook-details` (tags, private note, links, oembed) |
 | `convert <url> [--wait] [--replace] [design flags]` | `POST async` polled until `processed` |
 | `publish <source> --name ... [--purpose --course --idd-to --template --replace --note --description --embedded --skip-verify]` | convert, `flipbook-social`, `flipbook-details`, live GET of both URLs |
-| `design <id> [design flags]` | `PATCH flipbook-design` (only supplied fields) |
+| `design <id> [--idd-to slug] [design flags]` | `PATCH flipbook-design` (only supplied fields; `--idd-to` records the short link) |
 | `social <id> --title --description --thumbnail` | `POST flipbook-social` |
 | `replace-pdf <id> <url>` | `POST flipbook-replace` (support-gated) |
 | `delete <id> --confirm "<title>"` | `POST flipbook-delete` |
@@ -52,6 +52,10 @@ developers page and the live server differ, the live server wins and is noted.
 | `drive-url <id>` | builds the Drive direct download URL |
 | `mcp <tool> --args '{json}'` | any MCP tool by name |
 | `inventory [--refresh]`, `reconcile <file> [--csv]`, `batch <csv> [--out path]` | see the inventory and batch-convert skills |
+
+`--replace` on `convert` and on `publish` runs on the blocking `/rest` endpoint, so it
+ignores `--wait` and prints a notice saying so; the async endpoint accepts the flag but
+leaves the stored document unchanged.
 
 `reconcile --csv` writes rows with columns name, status, id, short, title, url, idd_to,
 candidates instead of the default table. `batch --out <path>` chooses where the results

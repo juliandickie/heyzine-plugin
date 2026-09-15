@@ -9,6 +9,7 @@ function fakeClient() {
   return {
     calls,
     convertAsync: async (p) => { calls.push(['convertAsync', p]); return { id: ID, url: 'https://heyzine.com/flip-book/abcdefabcd.html', thumbnail: 'https://cdn/x.jpg', state: 'processed', meta: { num_pages: 4 } }; },
+    convertSync: async (p) => { calls.push(['convertSync', p]); return { id: ID, url: 'https://heyzine.com/flip-book/abcdefabcd.html', thumbnail: 'https://cdn/x.jpg', meta: { num_pages: 4 } }; },
     setSocial: async (id, f) => { calls.push(['setSocial', id, f]); return { success: true }; },
     flipbookDetails: async (id) => { calls.push(['flipbookDetails', id]); return { id, title: 'Doc', pages: 4, tags: 'purpose:lead-magnet', private: 'x = y', links: { custom: 'https://heyzine.com/flip-book/abcdefabcd.html', base: 'https://heyzine.com/flip-book/abcdefabcd.html', thumbnail: 'https://cdn/x.jpg', pdf: 'https://cdn/x.pdf' }, oembed: { html: '<iframe src="https://heyzine.com/flip-book/abcdefabcd.html"></iframe>' } }; },
   };
@@ -65,10 +66,12 @@ test('publishOne stages, converts with register fields, sets social, verifies an
   assert.ok(r.verify.every((v) => v.ok));
 });
 
-test('publishOne honours replace, explicit design overrides and skipVerify', async () => {
+test('publishOne replaces on the blocking endpoint and honours design overrides and skipVerify', async () => {
   const client = fakeClient();
   const r = await publishOne(ctxOf(client), { source: 'https://x/y.pdf', name: 'Doc', purpose: 'course-material', replace: true, design: { download: true, page_effect: 'book' }, template: 'other.pdf', urlPath: 'my-doc', skipVerify: true });
-  const [, params] = client.calls.find((c) => c[0] === 'convertAsync');
+  assert.equal(client.calls.filter((c) => c[0] === 'convertSync').length, 1);
+  assert.equal(client.calls.some((c) => c[0] === 'convertAsync'), false);
+  const [, params] = client.calls.find((c) => c[0] === 'convertSync');
   assert.equal(params.replace, true);
   assert.equal(params.download, true);
   assert.equal(params.page_effect, 'book');
@@ -77,6 +80,8 @@ test('publishOne honours replace, explicit design overrides and skipVerify', asy
   assert.equal(params.tags.includes('source:url'), true);
   assert.deepEqual(r.verify, []);
   assert.equal(r.replaced, true);
+  assert.equal(r.polls, 1);
+  assert.equal(r.id, ID);
 });
 
 test('preflightExisting finds by drive id in the register, then by exact title', () => {

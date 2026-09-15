@@ -72,10 +72,56 @@ test('convert maps flags to REST fields and --wait polls', async () => {
   const calls = [];
   const client = { convertAsync: async (p) => { calls.push(p); return { id: ID, url: 'u', state: calls.length > 1 ? 'processed' : 'started' }; } };
   const h = harness({ client });
-  assert.equal(await main(['convert', 'https://x/y.pdf', '--wait', '--replace', '--title', 'T', '--download', 'true', '--tags', 'a,b', '--template', 'tpl.pdf', '--json'], h.deps), 0);
-  assert.equal(calls[0].client_id, 'cid'); assert.equal(calls[0].title, 'T'); assert.equal(calls[0].download, true); assert.equal(calls[0].replace, true); assert.equal(calls[0].template, 'tpl.pdf');
+  assert.equal(await main(['convert', 'https://x/y.pdf', '--wait', '--title', 'T', '--download', 'true', '--tags', 'a,b', '--template', 'tpl.pdf', '--json'], h.deps), 0);
+  assert.equal(calls[0].client_id, 'cid'); assert.equal(calls[0].title, 'T'); assert.equal(calls[0].download, true); assert.equal(calls[0].template, 'tpl.pdf');
+  assert.equal('replace' in calls[0], false);
   assert.equal(calls.length, 2);
   assert.equal(JSON.parse(h.text()).state, 'processed');
+});
+
+test('convert --replace runs on the blocking endpoint and never polls', async () => {
+  const calls = [];
+  const client = {
+    convertSync: async (p) => { calls.push(['convertSync', p]); return { id: ID, url: 'u' }; },
+    convertAsync: async (p) => { calls.push(['convertAsync', p]); return { id: ID, url: 'u', state: 'processed' }; },
+  };
+  const h = harness({ client });
+  assert.equal(await main(['convert', 'https://x/y.pdf', '--replace', '--wait', '--title', 'T', '--json'], h.deps), 0);
+  assert.deepEqual(calls.map((c) => c[0]), ['convertSync']);
+  assert.equal(calls[0][1].replace, true); assert.equal(calls[0][1].title, 'T');
+  assert.match(h.errText(), /replace runs on the blocking endpoint/);
+});
+
+test('design --idd-to rewrites the link facet and the register note', async () => {
+  const calls = [];
+  const client = {
+    flipbookDetails: async (id) => ({ id, title: 'Doc', tags: 'purpose:course-material,link:old,handmade', private: 'source_name = Doc\nhand note' }),
+    updateDesign: async (id, fields) => { calls.push([id, fields]); return { success: true }; },
+  };
+  const h = harness({ client });
+  assert.equal(await main(['design', ID, '--idd-to', 'PCP Zirconia'], h.deps), 0);
+  const [id, fields] = calls[0];
+  assert.equal(id, ID);
+  assert.match(fields.tags, /link:pcp-zirconia/);
+  assert.equal(fields.tags.includes('link:old'), false);
+  assert.match(fields.tags, /purpose:course-material/);
+  assert.match(fields.tags, /handmade/);
+  assert.match(fields.private_note, /idd_to = pcp-zirconia/);
+  assert.match(fields.private_note, /source_name = Doc/);
+  assert.match(fields.private_note, /hand note/);
+});
+
+test('design --idd-to keeps other design flags given alongside it', async () => {
+  const calls = [];
+  const client = {
+    flipbookDetails: async (id) => ({ id, title: 'Doc', tags: '', private: '' }),
+    updateDesign: async (id, fields) => { calls.push(fields); return { success: true }; },
+  };
+  const h = harness({ client });
+  assert.equal(await main(['design', ID, '--idd-to', 'doc', '--download', 'false', '--tags', 'extra'], h.deps), 0);
+  assert.equal(calls[0].download, false);
+  assert.match(calls[0].tags, /extra/);
+  assert.match(calls[0].tags, /link:doc/);
 });
 
 test('convert without client_id exits 2', async () => {

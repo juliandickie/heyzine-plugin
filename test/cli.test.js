@@ -145,10 +145,10 @@ test('inventory --refresh writes the cache and reconcile reads a names file', as
   assert.equal(rows[0].status, 'exists'); assert.equal(rows[1].status, 'missing');
 });
 
-test('a corrupt inventory cache is a validation error that names the fix', async () => {
+test('a corrupt inventory cache is a usage error that names the fix', async () => {
   const h = harness({ client: { listFlipbooks: async () => [] }, files: { '/data/inventory.json': '{ not json' } });
-  assert.equal(await main(['inventory'], h.deps), 1);
-  assert.match(h.errText(), /Inventory cache is unreadable .* run: heyzine inventory --refresh/);
+  assert.equal(await main(['inventory'], h.deps), 2);
+  assert.match(h.errText(), /usage: Inventory cache is unreadable .* run: heyzine inventory --refresh/);
 });
 
 test('batch refuses more than five rows without --yes and writes results next to the input', async () => {
@@ -187,4 +187,46 @@ test('plan errors exit 1 with the server message verbatim', async () => {
   const h = harness({ client });
   assert.equal(await main(['design', ID, '--url-path', 'x'], h.deps), 1);
   assert.match(h.errText(), /plan: Requires a plan with custom URLs/);
+});
+
+test('CLI argument errors are usage errors that exit 2', async () => {
+  const h = harness({ client: { listFlipbooks: async () => [{ id: ID }] } });
+  assert.equal(await main(['details'], h.deps), 2);
+  assert.match(h.errText(), /usage: Missing argument: flipbook id/);
+  const h2 = harness({ client: { mcpCall: async () => ({}) } });
+  assert.equal(await main(['mcp', 'heyzine_list_flipbooks', '--args', '{bad'], h2.deps), 2);
+  assert.match(h2.errText(), /usage: --args is not valid JSON/);
+  const h3 = harness({ client: { listFlipbooks: async () => [{ id: ID }] } });
+  assert.equal(await main(['design', ID], h3.deps), 2);
+  assert.match(h3.errText(), /usage: No design fields given/);
+});
+
+test('a full id of the wrong kind is a usage error, not a lookup', async () => {
+  const listed = [];
+  const client = { listBookshelves: async () => { listed.push('shelves'); return []; }, bookshelfFlipbooks: async () => [] };
+  const h = harness({ client });
+  assert.equal(await main(['shelf', ID], h.deps), 2);
+  assert.match(h.errText(), /usage: .* is a flipbook id, expected a bookshelf id/);
+  assert.deepEqual(listed, []);
+});
+
+test('render honours --json for string results', async () => {
+  const client = { listFlipbooks: async () => [{ id: ID }], pageText: async () => 'page text' };
+  const h = harness({ client });
+  assert.equal(await main(['page-text', '<short>', '1', '--json'], h.deps), 0);
+  assert.equal(JSON.parse(h.text()), 'page text');
+});
+
+test('reconcile --csv renders the spreadsheet shape', async () => {
+  const client = { listFlipbooks: async () => [{ id: ID, title: 'Medit i900 Intraoral Scanner Review', links: { base: 'https://heyzine.com/flip-book/<short>.html' } }], flipbookDetails: async (id) => ({ id, title: 'Medit i900 Intraoral Scanner Review', tags: '', private: '', links: { base: 'https://heyzine.com/flip-book/<short>.html', custom: 'https://heyzine.com/flip-book/<short>.html' } }), listBookshelves: async () => [] };
+  const seed = harness({ client });
+  assert.equal(await main(['inventory', '--refresh'], seed.deps), 0);
+  const h = harness({ client, files: { '/data/inventory.json': seed.written['/data/inventory.json'], '/names.txt': 'Medit i900 Intraoral Scanner Review\nMissing One\n' } });
+  assert.equal(await main(['reconcile', '/names.txt', '--csv'], h.deps), 0);
+  const lines = h.text().trim().split('\n');
+  assert.equal(lines[0], 'name,status,id,short,title,url,idd_to,candidates');
+  assert.match(lines[1], /^Medit i900 Intraoral Scanner Review,exists,<short>91f3029d392b65eaf26a5815e3b4e5\.pdf,<short>,/);
+  assert.match(lines[1], /https:\/\/idd\.aflip\.in\/<short>\.html/);
+  assert.match(lines[1], /<short> Medit i900 Intraoral Scanner Review \(exact\)/);
+  assert.match(lines[2], /^Missing One,missing,/);
 });

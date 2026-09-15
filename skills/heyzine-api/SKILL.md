@@ -64,6 +64,10 @@ csv lands (default is the input file name with `.results.csv`). A reconcile stat
 `exists` is reported only for a single exact or fuzzy title match; a substring match, or
 more than one match at any tier, is always `ambiguous`.
 
+Private note cap - Heyzine stores at most 200 characters of `private_note`; 201 answers HTTP 500
+on `flipbook-design`, and the async convert silently drops the title, tags, note and template
+when the note is longer. The register trims itself to fit and the CLI refuses a longer note.
+
 Design flags - `--title --subtitle --description --private-note --tags --template
 --download --full-screen --share --prev-next --show-info --background-color --logo
 --page-effect --rtl --url-path --url-domain`. Booleans take `true` or `false`. Page

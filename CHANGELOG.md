@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.3 - 2026-09-15
+
+- Fix - Heyzine keeps at most 200 characters of private note. Over that, `flipbook-design`
+  answers HTTP 500 and the async convert silently drops the title, tags, note and template,
+  so the flipbook lands untitled in the default design (34 of the first 37 batch rows did).
+  `buildRegister` now trims `published_by`, then `source_url`, then `source_name` until the
+  note fits and reports `note_dropped`; every outgoing note is asserted before it is sent
+  (`publish`, `batch`, `convert --private-note`, `design --private-note` all fail with a
+  validation error instead).
+- Fix - `publish` and `batch` wait for the title to appear on `flipbook-details` (10 s
+  interval, 5 min budget) before reporting, because details, list and the rendered page lag
+  `processed` by minutes. The result carries `register_settled`; the batch results CSV gains
+  a `register` column (`settled` or `pending`).
+- Recorded in `dev-docs/api-audit-2026-09-15.md` (first real batch section) and
+  `dev-docs/smoke-run-2026-09-15.md`.
+
 ## 0.1.2 - 2026-09-15
 
 - Fix - `reconcile` no longer substring-matches an untitled or very short flipbook title.

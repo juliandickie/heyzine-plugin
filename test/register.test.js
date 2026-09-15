@@ -4,6 +4,7 @@ import {
   FACETS, PURPOSES, slugValue, parseTags, formatTags, tagFacets, mergeTags,
   parseNote, formatNote, mergeNote, buildRegister,
 } from '../lib/register.mjs';
+import { NOTE_MAX, fitNote, assertNote } from '../lib/register.mjs';
 
 test('slugValue lowercases and hyphenates', () => {
   assert.equal(slugValue(' PCP Flowchart: Zirconia! '), 'pcp-flowchart-zirconia');
@@ -49,12 +50,35 @@ test('buildRegister produces the spec section 5 shape', () => {
   assert.equal(r.tags, 'published-by:heyzine-plugin,summer,purpose:course-material,course:pcp,link:pcp-flowchart-zirconia,source:drive');
   assert.equal(r.private_note, [
     'source_drive_id = 1AbC', 'source_name = Flowchart - Zirconia.pdf', 'idd_to = pcp-flowchart-zirconia',
-    'embedded = academy:chapter:123; academy:lesson:123', 'published = 2026-09-15', 'published_by = heyzine-plugin',
+    'embedded = academy:chapter:123; academy:lesson:123', 'published = 2026-09-15',
   ].join('\n'));
+  // The spec shape is 201 characters with published_by; the cap drops that line first (the tag carries it).
+  assert.deepEqual(r.note_dropped, ['published_by']);
   const u = buildRegister({ purpose: 'lead-magnet', sourceUrl: 'https://x/y.pdf', today: '2026-09-15' });
   assert.equal(u.tags, 'purpose:lead-magnet,source:url,published-by:heyzine-plugin');
   assert.match(u.private_note, /^source_url = https:\/\/x\/y\.pdf\n/);
   assert.throws(() => buildRegister({ purpose: 'nope' }), /purpose must be one of/);
   assert.throws(() => buildRegister({ sourceUrl: 'https://x/y.pdf' }), /purpose must be one of/);
   assert.throws(() => buildRegister({ purpose: 'other' }), /sourceDriveId or sourceUrl/);
+});
+
+test('fitNote drops published_by, then source_url, then source_name until the note fits 200 characters', () => {
+  const longUrl = '<source url>' + 'x'.repeat(120) + '.pdf';
+  const fields = { source_name: 'A long resource name for a review document', source_url: longUrl, idd_to: 'slug', embedded: 'academy:chapter:123', published: '2026-09-15', published_by: 'heyzine-plugin' };
+  const { note, dropped } = fitNote({ fields });
+  assert.ok(note.length <= NOTE_MAX, note.length);
+  assert.deepEqual(dropped, ['published_by', 'source_url']);
+  assert.match(note, /^source_name = A long/);
+  assert.match(note, /idd_to = slug/);
+  const short = fitNote({ fields: { idd_to: 'slug', published: '2026-09-15' } });
+  assert.deepEqual(short.dropped, []);
+  assert.throws(() => assertNote('a'.repeat(NOTE_MAX + 1)), (e) => e.code === 'validation' && /201 characters/.test(e.message));
+  assert.equal(assertNote('a'.repeat(NOTE_MAX)).length, NOTE_MAX);
+});
+
+test('buildRegister trims a long source_url and reports what it dropped', () => {
+  const r = buildRegister({ purpose: 'review', iddTo: 'ios-review-x', sourceUrl: 'https://example.com/' + 'y'.repeat(180) + '.pdf', sourceName: 'X Review', embedded: 'academy:chapter:1', today: '2026-09-15' });
+  assert.ok(r.private_note.length <= NOTE_MAX);
+  assert.deepEqual(r.note_dropped, ['published_by', 'source_url']);
+  assert.match(r.tags, /published-by:heyzine-plugin/);
 });

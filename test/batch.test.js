@@ -38,9 +38,9 @@ test('runBatch runs rows with bounded concurrency, skips existing unless replace
 });
 
 test('resultsCsv writes every result column', () => {
-  const csv = resultsCsv([{ row: 1, name: 'One', status: 'converted', id: 'a.pdf', short: 'a', url: 'u', base: 'b', pages: 2, error: '' }]);
+  const csv = resultsCsv([{ row: 1, name: 'One', status: 'converted', id: 'a.pdf', short: 'a', url: 'u', base: 'b', pages: 2, register: 'settled', error: '' }]);
   assert.equal(csv.split('\n')[0], RESULT_COLUMNS.join(','));
-  assert.match(csv, /\n1,One,converted,a\.pdf,a,u,b,2,\n/);
+  assert.match(csv, /\n1,One,converted,a\.pdf,a,u,b,2,settled,\n/);
 });
 
 test('runBatch survives a non-finite concurrency', async () => {

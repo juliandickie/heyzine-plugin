@@ -29,6 +29,10 @@ only for genuinely free-standing labels. The `note` column keeps only free text 
 any `key = value` line in it is dropped rather than allowed to overwrite the
 generated register.
 
+The results CSV carries a `register` column - `settled` means the title was read back from
+`flipbook-details`, `pending` means it had not appeared within five minutes (the record lags
+`processed`); re-check pending rows with `heyzine details` before handing links on.
+
 ## 2. Scope review
 
 Run `heyzine inventory --refresh` so existing flipbooks are skipped. Present the batch

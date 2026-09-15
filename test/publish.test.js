@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PURPOSE_DEFAULTS, sourceToUrl, checkSourceUrl, verifyLive, publishOne, preflightExisting } from '../lib/publish.mjs';
+import { PURPOSE_DEFAULTS, sourceToUrl, checkSourceUrl, verifyLive, publishOne, preflightExisting, waitForRegister } from '../lib/publish.mjs';
 
 const ID = 'abcdefabcdefabcdefabcdefabcdefabcdefabcd.pdf';
 
@@ -144,4 +144,31 @@ test('a convert answer without an id stops the flow instead of publishing an und
     (e) => e.code === 'unknown' && e.message === 'Heyzine returned no flipbook id',
   );
   assert.deepEqual(blocking.calls.map((c) => c[0]), ['convertSync']);
+});
+
+test('publishOne waits for the title to settle on details and reports when it never does', async () => {
+  const client = fakeClient();
+  let reads = 0;
+  const real = client.flipbookDetails;
+  client.flipbookDetails = async (id) => { reads += 1; const d = await real(id); return reads < 3 ? { ...d, title: '', tags: '', private: '' } : d; };
+  const slept = [];
+  const r = await publishOne(ctxOf(client, { pollOptions: { sleep: async (ms) => { slept.push(ms); }, settleIntervalMs: 7 } }), { source: 'https://x/y.pdf', name: 'Doc', purpose: 'review', skipVerify: true });
+  assert.equal(reads, 3);
+  assert.deepEqual(slept, [7, 7]);
+  assert.equal(r.register_settled, true);
+  assert.equal(r.title, 'Doc');
+
+  let t = 0;
+  const never = { flipbookDetails: async () => ({ title: '', links: {} }) };
+  const w = await waitForRegister(never, ID, 'Doc', { sleep: async () => { t += 60000; }, now: () => t, settleTimeoutMs: 120000 });
+  assert.equal(w.settled, false);
+});
+
+test('publishOne never sends a note over the cap and reports dropped lines', async () => {
+  const client = fakeClient();
+  const r = await publishOne(ctxOf(client), { source: 'https://example.com/' + 'z'.repeat(170) + '.pdf', name: 'Doc', purpose: 'review', iddTo: 'doc', embedded: 'academy:chapter:1', skipVerify: true });
+  const [, params] = client.calls.find((c) => c[0] === 'convertAsync');
+  assert.ok(params.private_note.length <= 200);
+  assert.deepEqual(r.note_dropped, ['published_by', 'source_url']);
+  await assert.rejects(publishOne(ctxOf(client), { source: 'https://x/y.pdf', name: 'Doc', purpose: 'review', note: 'h'.repeat(210), skipVerify: true }), (e) => e.code === 'validation');
 });

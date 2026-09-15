@@ -20,7 +20,7 @@ function harness({ client = {}, key = 'K', settings = {}, files = {}, stdin } = 
     writeFile: async (p, text) => { written[p] = text; },
     mkdir: async () => {},
     fetch: async () => ({ status: 200, ok: true, headers: { get: () => null }, body: { cancel: async () => {} }, text: async () => '' }),
-    today: () => '2026-09-15', sleep: async () => {},
+    today: () => '2026-09-15', sleep: async () => {}, now: (() => { let t = 0; return () => (t += 60000); })(),
   };
   return { deps, out, err, written, text: () => out.join(''), errText: () => err.join('') };
 }

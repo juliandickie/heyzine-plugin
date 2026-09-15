@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# heyzine - REST CLI for the Heyzine plugin. Resolves symlinks so the plugin cache path works.
+set -euo pipefail
+SRC="$0"
+while [ -L "$SRC" ]; do
+  DIR="$(cd -P "$(dirname "$SRC")" && pwd)"
+  SRC="$(readlink "$SRC")"
+  [[ "$SRC" != /* ]] && SRC="$DIR/$SRC"
+done
+DIR="$(cd -P "$(dirname "$SRC")/.." && pwd)"
+exec node "$DIR/lib/cli.mjs" "$@"

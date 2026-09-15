@@ -17,6 +17,7 @@ test('normaliseTitle strips PDF markers, the reference account suffixes and punc
   assert.equal(normaliseTitle('Alliedstar AS 260 Review PDF'), 'alliedstar as 260 review');
   assert.equal(normaliseTitle('  Zirconia Guide from Indication to Cementation - the reference account '), 'zirconia guide from indication to cementation');
   assert.equal(normaliseTitle('Formlabs Form 4B Review – Breaking Free'), 'formlabs form 4b review breaking free');
+  assert.equal(normaliseTitle('Scanner Guide - the reference account.'), 'scanner guide');
 });
 
 test('overlap and matchTitle tiers', () => {
@@ -85,4 +86,69 @@ test('reconcile classifies exists, ambiguous and missing with public host urls',
   assert.equal(rows[1].id, '');
   assert.equal(rows[2].status, 'missing');
   assert.equal(rows[2].id, '');
+});
+
+test('parseNamesFile drops alignment rows and reads the name column in any casing or quoting', () => {
+  const md = ['| Anchor name | Slug |', '|:---|---:|', '| Medit i900 Review | a |', '| 3DISC Heron Review | b |'].join('\n');
+  assert.deepEqual(parseNamesFile(md), ['Medit i900 Review', '3DISC Heron Review']);
+  assert.deepEqual(parseNamesFile('Name,Slug\nMedit i900 Review,a\n'), ['Medit i900 Review']);
+  assert.deepEqual(parseNamesFile('"name","slug"\n"A, B",x\n'), ['A, B']);
+});
+
+const stub = (ids) => ids.map((id) => ({ id, title: id, pages: 1, links: {} }));
+const pagingClient = (pages) => {
+  const calls = [];
+  return {
+    calls,
+    listFlipbooks: async (params) => { calls.push(params); return pages(calls.length); },
+    flipbookDetails: async (id) => ({ id, tags: '', private: '' }),
+    listBookshelves: async () => [],
+  };
+};
+
+test('refreshInventory pages the flipbook list until a short page', async () => {
+  const first = stub(Array.from({ length: 200 }, (_, i) => `first-${i}`));
+  const second = stub(['s0', 's1', 's2', 's3', 's4']);
+  const client = pagingClient((n) => (n === 1 ? first : second));
+  const cache = await refreshInventory(client, { writeFile: async () => {} });
+  assert.equal(cache.count, 205);
+  assert.equal(client.calls.length, 2);
+  assert.deepEqual(client.calls[0], { limit: 200, offset: 0 });
+  assert.deepEqual(client.calls[1], { limit: 200, offset: 200 });
+});
+
+test('refreshInventory stops and dedupes when the server ignores limit and offset', async () => {
+  const same = stub(Array.from({ length: 200 }, (_, i) => `same-${i}`));
+  const client = pagingClient(() => same);
+  const cache = await refreshInventory(client, { writeFile: async () => {} });
+  assert.equal(cache.count, 200);
+  assert.equal(client.calls.length, 2);
+  const short = pagingClient(() => stub(['a', 'b', 'c']));
+  const small = await refreshInventory(short, { writeFile: async () => {} });
+  assert.equal(small.count, 3);
+  assert.equal(short.calls.length, 1);
+});
+
+test('resolveFullId resolves a custom domain slug and a bookshelf slug', () => {
+  const G = item('4444444444aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf', 'Slugged Guide', { links: { custom: 'https://docs.example.com/my-slug', base: 'https://heyzine.com/flip-book/4444444444.html' } });
+  const cache = cacheOf([A, G]);
+  cache.bookshelves[0].links = { url: 'https://heyzine.com/shelf/perfect-ceramic-processing-pdfs' };
+  assert.deepEqual(resolveFullId('https://docs.example.com/my-slug', cache), { kind: 'flipbook', full: G.id });
+  assert.deepEqual(resolveFullId('https://heyzine.com/shelf/perfect-ceramic-processing-pdfs', cache), { kind: 'bookshelf', full: 'a16ec9269b8d436092e69be09a107d1d264e9f18' });
+});
+
+test('reconcile keeps a lone substring match ambiguous and falls back to the link facet', () => {
+  const cache = cacheOf([A, B, C]);
+  const [sub] = reconcile(['Chairside Processing of Monolithic Zirconia Restorations'], cache, { publicHost: 'docs.aflip.in' });
+  assert.equal(sub.status, 'ambiguous');
+  assert.equal(sub.candidates.length, 1);
+  assert.equal(sub.candidates[0].tier, 'substring');
+  assert.equal(sub.candidates[0].id, C.id);
+  assert.equal(sub.id, '');
+  const facetCache = cacheOf([item('3333333333aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf', 'Unique Widget Handbook')]);
+  facetCache.items[0].register.fields.idd_to = '';
+  facetCache.items[0].facets.link = ['widget-handbook'];
+  const [row] = reconcile(['Unique Widget Handbook'], facetCache, { publicHost: 'docs.aflip.in' });
+  assert.equal(row.status, 'exists');
+  assert.equal(row.idd_to, 'widget-handbook');
 });

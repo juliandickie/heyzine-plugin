@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "heyzine-plugin",
+  "description": "Standalone single-plugin marketplace for the Heyzine plugin - publish PDFs as flipbooks and carry them to lead magnets, LearnDash course material, website embeds, bookshelves and access lists.",
+  "owner": { "name": "Julian Dickie" },
+  "plugins": [
+    {
+      "name": "heyzine",
+      "description": "Publish PDFs as Heyzine flipbooks and carry them to lead magnets, LearnDash course material, website embeds and bookshelves. Activates for: (1) converting a PDF, Word or PowerPoint file into a flipbook, (2) listing, inspecting, restyling, replacing or deleting flipbooks, (3) building a lead magnet share kit with embed code and short link, (4) adding course PDFs to LearnDash Materials, (5) filling and ordering Heyzine bookshelves, (6) password and per-user access lists, (7) reconciling a list of resource names against the account.",
+      "version": "0.1.0",
+      "author": { "name": "Julian Dickie" },
+      "license": "MIT",
+      "keywords": ["heyzine", "flipbook", "pdf", "lead-magnet", "learndash", "bookshelf"],
+      "category": "productivity",
+      "source": "./"
+    }
+  ]
+}

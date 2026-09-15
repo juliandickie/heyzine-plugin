@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "heyzine",
+  "version": "0.1.0",
+  "description": "Publish PDFs as Heyzine flipbooks and carry them to lead magnets, LearnDash course material, website embeds and bookshelves. Activates for: (1) converting a PDF, Word or PowerPoint file into a flipbook, (2) listing, inspecting, restyling, replacing or deleting flipbooks, (3) building a lead magnet share kit with embed code and short link, (4) adding course PDFs to LearnDash Materials, (5) filling and ordering Heyzine bookshelves, (6) password and per-user access lists, (7) reconciling a list of resource names against the account.",
+  "author": { "name": "Julian Dickie" },
+  "license": "MIT",
+  "keywords": ["heyzine", "flipbook", "pdf", "lead-magnet", "learndash", "bookshelf"],
+  "mcpServers": "./.mcp.json",
+  "hooks": "./hooks/hooks.json",
+  "userConfig": {
+    "heyzine_api_key": {
+      "type": "string",
+      "title": "Heyzine API Key",
+      "description": "The API key from heyzine.com/developers#apikey. Optional - the config file ~/.config/heyzine-plugin/config.toml (unattended default), a 1Password reference, or OAuth sign-in can supply it instead. See /heyzine:setup.",
+      "sensitive": true,
+      "required": false
+    },
+    "heyzine_key_op_ref": {
+      "type": "string",
+      "title": "1Password Secret Reference",
+      "description": "Optional. op://Vault/Item/field pointing at the API key. Read via the op CLI at server start when no direct key is configured. A pointer, not a secret."
+    },
+    "heyzine_op_account": {
+      "type": "string",
+      "title": "1Password Account",
+      "description": "Optional. Sign-in address (yourteam.1password.com) when the op CLI is signed in to more than one account."
+    },
+    "public_host": {
+      "type": "string",
+      "title": "Public Host",
+      "description": "Optional. White-label host that serves your flipbooks, for example docs.aflip.in. Share URLs are reported on this host."
+    },
+    "template_id": {
+      "type": "string",
+      "title": "Default Template Flipbook",
+      "description": "Optional. Id or URL of the flipbook whose design new flipbooks copy."
+    },
+    "staging_folder_id": {
+      "type": "string",
+      "title": "Drive Staging Folder",
+      "description": "Optional. Google Drive folder id where source PDFs are staged (anyone-with-link) before conversion."
+    }
+  }
+}

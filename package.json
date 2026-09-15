@@ -1,0 +1,11 @@
+{
+  "name": "heyzine-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Claude Code plugin - Heyzine flipbook publishing (REST CLI plus MCP bridge)",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": { "test": "node --test test/*.test.js" },
+  "heyzinePlugin": { "mcpRemoteVersion": "0.14.2" }
+}

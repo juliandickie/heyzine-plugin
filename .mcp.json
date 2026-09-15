@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "heyzine": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/run-mcp.mjs"],
+      "env": {
+        "HEYZINE_API_KEY": "${user_config.heyzine_api_key}",
+        "HEYZINE_KEY_OP_REF": "${user_config.heyzine_key_op_ref}",
+        "HEYZINE_OP_ACCOUNT": "${user_config.heyzine_op_account}",
+        "HEYZINE_PLUGIN_DATA": "${CLAUDE_PLUGIN_DATA}",
+        "CLAUDE_PLUGIN_ROOT": "${CLAUDE_PLUGIN_ROOT}"
+      }
+    }
+  }
+}

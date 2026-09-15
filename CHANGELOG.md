@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2 - 2026-09-15
+
+- Fix - `reconcile` no longer substring-matches an untitled or very short flipbook title.
+  The 12 character floor now applies to both sides of the comparison; on the live account
+  seven untitled flipbooks had turned 43 of 61 names ambiguous.
+- The `review` purpose now converts with share off (download stays on). Julian, 2026-09-15 -
+  share stays off unless it can be pointed back at the opt-in page or article that captures
+  the email address.
+
 ## 0.1.1 - 2026-09-15
 
 - Fix - the manifest no longer names `hooks/hooks.json` under `hooks`. Claude Code loads

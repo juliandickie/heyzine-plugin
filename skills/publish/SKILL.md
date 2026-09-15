@@ -42,7 +42,7 @@ flipbook for a resource that already has one unless the user says so.
 |---|---|---|
 | `lead-magnet` | download on, share off, fullscreen, arrows | Free guides, checklists, buyers guides. Share stays off so readers pass on the opt-in page, not the PDF |
 | `course-material` | download on, share off, fullscreen, arrows | Chapter and lesson resources behind enrolment. Download stays on because many double as worksheets and checklists |
-| `review` | download on, share on | Product review PDFs that outlive any course |
+| `review` | download on, share off | Product review PDFs that outlive any course. Share is off because Heyzine's share button cannot be pointed at the opt-in page or article that captures the email |
 | `event` | download off, share on | Event guides, agendas |
 | `catalog` | download on, share on | Price guides, catalogs |
 | `other` | account defaults | Anything else |

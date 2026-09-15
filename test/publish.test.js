@@ -23,6 +23,7 @@ test('purpose defaults exist for every purpose', () => {
   assert.equal(PURPOSE_DEFAULTS['course-material'].download, true);
   assert.equal(PURPOSE_DEFAULTS['lead-magnet'].share, false);
   assert.equal(PURPOSE_DEFAULTS['course-material'].share, false);
+  assert.equal(PURPOSE_DEFAULTS.review.share, false);
 });
 
 test('sourceToUrl maps Drive ids and links, passes http URLs, rejects local paths', () => {

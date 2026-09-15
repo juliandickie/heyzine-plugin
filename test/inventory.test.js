@@ -152,3 +152,13 @@ test('reconcile keeps a lone substring match ambiguous and falls back to the lin
   assert.equal(row.status, 'exists');
   assert.equal(row.idd_to, 'widget-handbook');
 });
+
+test('matchTitle never substring-matches an untitled or very short flipbook title', () => {
+  const untitled = item('4444444444aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf', '');
+  const tiny = item('5555555555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf', 'Scan');
+  const r = matchTitle('3Shape TRIOS 4 and TRIOS MOVE Review', [untitled, tiny]);
+  assert.equal(r.tier, 'none');
+  assert.equal(r.matches.length, 0);
+  const [row] = reconcile(['3Shape TRIOS 4 and TRIOS MOVE Review'], cacheOf([untitled, tiny]));
+  assert.equal(row.status, 'missing');
+});

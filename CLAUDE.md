@@ -32,6 +32,14 @@ as injectable parameters and is unit tested without network. The launcher test
 asserts the security contract - the key is written to a 0600 header file, never
 appears in argv, and is stripped from the child environment.
 
+## Known API Limits (proven live, dev-docs/api-audit-2026-09-15.md)
+
+Private note max 200 characters (over it the async convert silently drops title, tags,
+note and template; flipbook-design answers HTTP 500). Details, list and the rendered page
+lag `processed` by minutes; read back through `waitForRegister`, never once. Replace is
+honoured only by the blocking endpoints. REST errors are HTTP 200 bodies with
+`success:false`. HEAD every source for application/pdf; an HTML 404 page still converts.
+
 ## Versioning
 
 MAJOR breaking skill or CLI change, MINOR new skill or command, PATCH fix.

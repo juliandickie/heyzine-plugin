@@ -17,6 +17,13 @@ are two ways in, and they share one key resolver - the `heyzine` command line to
 (REST, JSON, unattended, the path every skill names first) and an MCP bridge to Heyzine's
 hosted server at https://heyzine.com/mcp for conversational use.
 
+## Status
+
+0.1.3, released 2026-09-15 - private GitHub repo, listed in the outfit and ai-loadout
+catalogs, installed as `heyzine@outfit`. First real batch done the same night - 37 academy
+review PDFs converted, registered and linked from the short domain (dev-docs/smoke-run-2026-09-15.md).
+Latest handoff - dev-docs/SESSION-HANDOFF-2026-09-15-night.md.
+
 ## Install
 
 ```bash
@@ -166,6 +173,14 @@ Exit codes - 0 ok, 1 API or conversion error, 2 configuration or usage (no key, 
 client id, bad arguments, unreadable inventory cache), 3 refused.
 
 ## The register
+
+Heyzine keeps at most 200 characters of private note. The generated note drops
+`published_by`, then `source_url`, then `source_name` until it fits (the result reports
+`note_dropped`), and every command refuses a longer note, because over the cap Heyzine
+silently discards the title, tags, note and template from an async conversion and answers
+HTTP 500 on `flipbook-design`. Details, list and the rendered page also lag `processed`
+by minutes; `publish` and `batch` wait for the title to appear before reporting.
+
 
 Every flipbook the plugin makes carries its own provenance, so the Heyzine account is
 the inventory and nothing has to be kept in sync beside it.

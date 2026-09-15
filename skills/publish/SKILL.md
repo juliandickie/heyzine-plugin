@@ -40,15 +40,14 @@ flipbook for a resource that already has one unless the user says so.
 
 | Purpose | Defaults | Typical use |
 |---|---|---|
-| `lead-magnet` | download on, share on, fullscreen, arrows | Free guides, checklists, buyers guides |
-| `course-material` | download off, share off, fullscreen, arrows | Chapter and lesson resources behind enrolment |
+| `lead-magnet` | download on, share off, fullscreen, arrows | Free guides, checklists, buyers guides. Share stays off so readers pass on the opt-in page, not the PDF |
+| `course-material` | download on, share off, fullscreen, arrows | Chapter and lesson resources behind enrolment. Download stays on because many double as worksheets and checklists |
 | `review` | download on, share on | Product review PDFs that outlive any course |
 | `event` | download off, share on | Event guides, agendas |
 | `catalog` | download on, share on | Price guides, catalogs |
 | `other` | account defaults | Anything else |
 
-Override any default with a design flag (`--download false`). Ask when the user has not
-said whether readers may download and the purpose is course material.
+Override any default with a design flag (`--download false`).
 
 ## 4. Publish
 

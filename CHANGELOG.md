@@ -1,8 +1,12 @@
 # Changelog
 
-## 0.1.0 - unreleased
+## 0.1.0 - 2026-09-15
 
 Initial build.
+
+- Purpose defaults set with Julian on 2026-09-15 - course material converts with download
+  on (many double as worksheets and checklists) and share off; lead magnets download on
+  and share off, so readers pass on the opt-in page rather than the PDF.
 
 - Ten skills - `heyzine` (overview and router), `setup`, `publish`, `lead-magnet`,
   `course-material`, `bookshelf`, `access`, `inventory`, `batch-convert`, and the

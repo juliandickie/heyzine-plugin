@@ -8,7 +8,8 @@ argument-hint: "<file, Drive link or URL> --name \"<Resource Name>\" [--idd-to <
 
 ## 1. Publish
 
-Follow `/heyzine:publish` with `--purpose lead-magnet` (download on, share on). Keep
+Follow `/heyzine:publish` with `--purpose lead-magnet` (download on, share off - readers are sent to the opt-in
+page, never the PDF directly). Keep
 the JSON result.
 
 ## 2. Short link

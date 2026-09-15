@@ -10,7 +10,8 @@ argument-hint: "<file, Drive link or URL> --name \"<Resource Name>\" --course <s
 
 Follow `/heyzine:publish` with `--purpose course-material --course <slug>` and
 `--embedded "academy:chapter:<id>; academy:lesson:<id>"` when the targets are known.
-Download is off by default; ask if students should be able to download.
+Download is on by default (worksheets and checklists) and share is off; pass
+`--download false` for a resource students should read but not keep.
 
 Check first whether the resource already has a flipbook (`heyzine inventory`, or
 `heyzine reconcile` for a list) - many academy PDFs do, and a second copy splits the

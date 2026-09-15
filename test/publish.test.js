@@ -20,7 +20,9 @@ const ctxOf = (client, overrides = {}) => ({ client, settings: { clientId: 'cid'
 test('purpose defaults exist for every purpose', () => {
   for (const p of ['lead-magnet', 'course-material', 'review', 'event', 'catalog', 'other']) assert.ok(p in PURPOSE_DEFAULTS, p);
   assert.equal(PURPOSE_DEFAULTS['lead-magnet'].download, true);
-  assert.equal(PURPOSE_DEFAULTS['course-material'].download, false);
+  assert.equal(PURPOSE_DEFAULTS['course-material'].download, true);
+  assert.equal(PURPOSE_DEFAULTS['lead-magnet'].share, false);
+  assert.equal(PURPOSE_DEFAULTS['course-material'].share, false);
 });
 
 test('sourceToUrl maps Drive ids and links, passes http URLs, rejects local paths', () => {

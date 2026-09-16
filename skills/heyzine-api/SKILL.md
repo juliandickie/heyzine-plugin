@@ -92,7 +92,7 @@ the `page-text` page argument) are refused as usage errors unless they are numbe
 | `flipbook-details` | GET | `id` (full) | Adds `tags`, `oembed` |
 | `flipbook-design` | PATCH | `id` plus any design field | Only supplied fields change; `url_path` and `url_domain` change the public link |
 | `flipbook-social` | POST | `id`, `title`, `description`, `thumbnail` | Open Graph card; networks cache the old card |
-| `flipbook-replace` | POST | `id`, `pdf` | Support-gated (refused on the reference account) |
+| `flipbook-replace` | POST | `id`, `pdf` | Support-gated (refused until support enables the account) |
 | `flipbook-delete` | POST | `id` | Permanent |
 | `bookshelf-list` | GET | | Premium. `{id, date, title, subtitle, description, flipbook_count, links{url, thumbnail}}` |
 | `bookshelf-flipbooks` | GET | `id` | Adds `position` (zero-based) |

@@ -21,7 +21,7 @@
 - Fix - `reconcile` no longer substring-matches an untitled or very short flipbook title.
   The 12 character floor now applies to both sides of the comparison; on the live account
   seven untitled flipbooks had turned 43 of 61 names ambiguous.
-- The `review` purpose now converts with share off (download stays on). Julian, 2026-09-15 -
+- The `review` purpose now converts with share off (download stays on). Decided 2026-09-15 -
   share stays off unless it can be pointed back at the opt-in page or article that captures
   the email address.
 
@@ -35,7 +35,7 @@
 
 Initial build.
 
-- Purpose defaults set with Julian on 2026-09-15 - course material converts with download
+- Purpose defaults set on 2026-09-15 - course material converts with download
   on (many double as worksheets and checklists) and share off; lead magnets download on
   and share off, so readers pass on the opt-in page rather than the PDF.
 

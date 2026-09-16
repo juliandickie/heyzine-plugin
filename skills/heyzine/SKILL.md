@@ -33,8 +33,8 @@ Both need a key. Run `/heyzine:setup` once per machine.
 |---|---|
 | Configure the key, client id, public host, template, staging folder | `/heyzine:setup` |
 | Publish one document end to end | `/heyzine:publish` |
-| Lead magnet share kit (URL, embed, button, the short domain link, social card) | `/heyzine:lead-magnet` |
-| Course PDF into LearnDash Materials with an the short domain link | `/heyzine:course-material` |
+| Lead magnet share kit (URL, embed, button, short link, social card) | `/heyzine:lead-magnet` |
+| Course PDF into LearnDash Materials with a short link | `/heyzine:course-material` |
 | Fill, order or brand a bookshelf | `/heyzine:bookshelf` |
 | Password or per-user access | `/heyzine:access` |
 | Find, list, search text, reconcile a names list against the account | `/heyzine:inventory` |
@@ -48,16 +48,16 @@ the inventory. Tags are `facet:value` - `purpose:lead-magnet|course-material|rev
 event|catalog|other`, `course:<slug>`, `link:<the short domain slug>`, `source:drive|url`,
 `published-by:heyzine-plugin`. The private note is `key = value` lines -
 `source_drive_id`, `source_name`, `source_url`, `idd_to`, `embedded` (semicolon list
-such as `academy:chapter:123; academy:lesson:123`), `published`, `published_by`.
+such as `academy:chapter:123; academy:lesson:124`), `published`, `published_by`.
 Hand-written note lines are preserved. Passwords and access lists never go into
 either. `heyzine details <id> --json` shows both parsed.
 
 ## Link rules
 
-- Share URLs are reported on the configured public host (`docs.aflip.in` for the reference account) and
+- Share URLs are reported on the configured public host (for example `docs.aflip.in`) and
   on heyzine.com; both serve the same flipbook by short id.
 - Human-facing links (academy materials, support replies, SMS, social) go through an
-  the short domain short link made with the Short.io tools, named by resource type
+  short link made with the Short.io tools, named by resource type
   (`ios-review-medit-i900`) or course prefix (`pcp-flowchart-zirconia`), so a hosting
   change is one Short.io edit. ActiveCampaign emails use the full direct URL, never a
   short link.
@@ -70,14 +70,14 @@ either. `heyzine details <id> --json` shows both parsed.
 Converting the same URL twice returns the same flipbook. A revised edition is the same
 Drive file updated in place (same file id, same URL) then
 `heyzine convert <url> --replace --wait`, which keeps the id, both public URLs and the
-the short domain link. `replace-pdf` needs Heyzine support to enable the account and is not
-enabled for the reference account.
+short link. `replace-pdf` needs Heyzine support to enable the account and is not
+enabled on the reference account.
 
 ## Plan gates and limits
 
 Bookshelves need Premium; custom URL path and subdomain need Professional; own DNS
 domain and one-time email access need Premium; logos need Standard; `flipbook-replace`
-needs support enablement. the reference account is on Premium. The server reports a refused feature with
+needs support enablement. The reference account is on Premium. The server reports a refused feature with
 a plan message - repeat it verbatim and stop, never downgrade the request silently.
 Free accounts keep five flipbooks and drop the oldest.
 

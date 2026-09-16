@@ -1,6 +1,6 @@
 ---
 name: lead-magnet
-description: Turn a PDF into a Heyzine lead magnet and produce the share kit - public and heyzine.com URLs, oEmbed iframe, button and anchor snippets, an the short domain short link through the Short.io tools, and the social card. Use when the user says lead magnet, free download, opt-in PDF, share kit, embed the flipbook on the landing page, or link to the guide from the thank-you page.
+description: Turn a PDF into a Heyzine lead magnet and produce the share kit - public and heyzine.com URLs, oEmbed iframe, button and anchor snippets, a short link through the Short.io tools, and the social card. Use when the user says lead magnet, free download, opt-in PDF, share kit, embed the flipbook on the landing page, or link to the guide from the thank-you page.
 argument-hint: "<file, Drive link or URL> --name \"<Resource Name>\" [--idd-to <slug>]"
 ---
 
@@ -14,7 +14,7 @@ the JSON result.
 
 ## 2. Short link
 
-Make or reuse an the short domain link with the Short.io tools - search by destination first
+Make or reuse a short link with the Short.io tools - search by destination first
 (the public host URL), then create with a slug by resource type in lowercase hyphens
 (`digital-buyers-checklist`, `ios-price-guide` without a year so the next edition is a
 Short.io edit). Record the slug on the flipbook with the proper flag if it was not
@@ -36,15 +36,15 @@ wrap it for responsive layouts instead.
 ```html
 <!-- embed -->
 <div style="max-width: 900px; margin: 0 auto;">
-  <iframe allowfullscreen="allowfullscreen" allow="clipboard-write" scrolling="no" class="fp-iframe" style="width: 100%; height: 600px;" src="https://docs.aflip.in/<short>.html"></iframe>
+  <iframe allowfullscreen="allowfullscreen" allow="clipboard-write" scrolling="no" class="fp-iframe" style="width: 100%; height: 600px;" src="https://<account>.aflip.in/<short>.html"></iframe>
 </div>
 <!-- button -->
-<a class="button" href="https://the short domain/<slug>" target="_blank" rel="noopener">Read the <Resource Name></a>
+<a class="button" href="https://<short domain>/<slug>" target="_blank" rel="noopener">Read the <Resource Name></a>
 <!-- anchor in text -->
-<a href="https://the short domain/<slug>">Resource Name</a>
+<a href="https://<short domain>/<slug>">Resource Name</a>
 ```
 
-Markdown anchor - `[Resource Name](https://the short domain/<slug>)`.
+Markdown anchor - `[Resource Name](https://<short domain>/<slug>)`.
 
 ## 4. Social card
 
@@ -54,15 +54,15 @@ Markdown anchor - `[Resource Name](https://the short domain/<slug>)`.
 
 | Surface | Link |
 |---|---|
-| Landing page button, thank-you page, website text | the short domain short link |
-| Support replies, SMS, social posts | the short domain short link |
+| Landing page button, thank-you page, website text | short link |
+| Support replies, SMS, social posts | short link |
 | ActiveCampaign emails | full public host URL (short links are for humans, and seg_cid only populates in AC) |
 | Page embed | oEmbed iframe |
 
 ## 6. Write the kit
 
 Save `<resource-slug>-share-kit.md` beside the source (or in the session scratchpad
-when the source is remote) with - resource name, both URLs, the the short domain link and its
+when the source is remote) with - resource name, both URLs, the short link and its
 configured destination, the iframe, the button and anchor snippets, the social card
 fields, the flipbook id and page count, the date. Report the file path and the public
 URL.

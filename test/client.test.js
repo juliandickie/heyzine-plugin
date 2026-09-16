@@ -115,8 +115,8 @@ test('mcpCall posts a tools/call envelope and unwraps text or JSON results', asy
   assert.equal(calls[0].init.headers['MCP-Protocol-Version'], '2025-06-18');
   assert.equal(calls[0].init.headers.Accept, 'application/json, text/event-stream');
   assert.deepEqual(JSON.parse(calls[0].init.body).params, { name: 'heyzine_search_text', arguments: { q: 'zirconia' } });
-  assert.equal(await c.pageText('<short>', 1), 'Plain page text');
-  assert.deepEqual(JSON.parse(calls[1].init.body).params.arguments, { n: '<short>', p: 1 });
+  assert.equal(await c.pageText('0d0d0d0d0d', 1), 'Plain page text');
+  assert.deepEqual(JSON.parse(calls[1].init.body).params.arguments, { n: '0d0d0d0d0d', p: 1 });
   await assert.rejects(c.mcpCall('heyzine_list_bookshelves', {}), (e) => e.code === 'plan');
   await assert.rejects(c.mcpCall('nope', {}), (e) => e.code === 'validation' && /Unknown tool/.test(e.message));
   await assert.rejects(c.mcpCall('heyzine_list_flipbooks', {}), (e) => e.code === 'auth');

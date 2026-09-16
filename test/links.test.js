@@ -5,45 +5,45 @@ import {
   driveFileId, driveDirectUrl, linkConversionUrl, DRIVE_URL_FORMS, safeUrl,
 } from '../lib/links.mjs';
 
-const FULL = '<short>91f3029d392b65eaf26a5815e3b4e5.pdf';
+const FULL = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678.pdf';
 const SHELF = 'a16ec9269b8d436092e69be09a107d1d264e9f18';
 
 test('full id detection', () => {
   assert.equal(isFullFlipbookId(FULL), true);
   assert.equal(isFullFlipbookId(SHELF), false);
   assert.equal(isFullBookshelfId(SHELF), true);
-  assert.equal(isFullBookshelfId('<short>'), false);
+  assert.equal(isFullBookshelfId('a1b2c3d4e5'), false);
 });
 
 test('shortId from every accepted form', () => {
-  assert.equal(shortId(FULL), '<short>');
+  assert.equal(shortId(FULL), 'a1b2c3d4e5');
   assert.equal(shortId(SHELF), 'a16ec9269b');
-  assert.equal(shortId('FFD194B29C'), '<short>');
-  assert.equal(shortId('https://heyzine.com/flip-book/<short>.html'), '<short>');
-  assert.equal(shortId('https://heyzine.com/flip-book/<short>.html?x=1#p2'), '<short>');
-  assert.equal(shortId('https://docs.aflip.in/<short>.html'), '<short>');
+  assert.equal(shortId('A1B2C3D4E5'), 'a1b2c3d4e5');
+  assert.equal(shortId('https://heyzine.com/flip-book/a1b2c3d4e5.html'), 'a1b2c3d4e5');
+  assert.equal(shortId('https://heyzine.com/flip-book/a1b2c3d4e5.html?x=1#p2'), 'a1b2c3d4e5');
+  assert.equal(shortId('https://docs.aflip.in/0d0d0d0d0d.html'), '0d0d0d0d0d');
   assert.equal(shortId('https://heyzine.com/shelf/<short>.html'), '<short>');
   assert.equal(shortId('https://heyzine.com/shelf/perfect-ceramic-processing-pdfs'), null);
   assert.equal(shortId('nonsense'), null);
 });
 
 test('parseId classifies and extracts slugs for custom paths', () => {
-  assert.deepEqual(parseId(FULL), { kind: 'flipbook', full: FULL, short: '<short>', slug: null });
+  assert.deepEqual(parseId(FULL), { kind: 'flipbook', full: FULL, short: 'a1b2c3d4e5', slug: null });
   assert.deepEqual(parseId(SHELF), { kind: 'bookshelf', full: SHELF, short: 'a16ec9269b', slug: null });
   assert.deepEqual(parseId('https://heyzine.com/shelf/perfect-ceramic-processing-pdfs'), { kind: 'bookshelf', full: null, short: null, slug: 'perfect-ceramic-processing-pdfs' });
-  assert.deepEqual(parseId('https://docs.aflip.in/<short>.html'), { kind: 'flipbook', full: null, short: '<short>', slug: null });
-  assert.equal(parseId('<short>').kind, 'unknown');
-  assert.equal(parseId('<short>').short, '<short>');
+  assert.deepEqual(parseId('https://docs.aflip.in/0d0d0d0d0d.html'), { kind: 'flipbook', full: null, short: '0d0d0d0d0d', slug: null });
+  assert.equal(parseId('0d0d0d0d0d').kind, 'unknown');
+  assert.equal(parseId('0d0d0d0d0d').short, '0d0d0d0d0d');
 });
 
 test('publicUrl rewrites onto the white-label host and falls back to the custom link', () => {
-  const fb = { id: FULL, links: { custom: 'https://heyzine.com/flip-book/<short>.html', base: 'https://heyzine.com/flip-book/<short>.html' } };
-  assert.equal(publicUrl(fb, 'docs.aflip.in'), 'https://docs.aflip.in/<short>.html');
-  assert.equal(publicUrl(fb, 'https://docs.aflip.in/'), 'https://docs.aflip.in/<short>.html');
-  assert.equal(publicUrl(fb, ''), 'https://heyzine.com/flip-book/<short>.html');
-  const custom = { id: FULL, links: { custom: 'https://docs.example.com/my-slug', base: 'https://heyzine.com/flip-book/<short>.html' } };
+  const fb = { id: FULL, links: { custom: 'https://heyzine.com/flip-book/a1b2c3d4e5.html', base: 'https://heyzine.com/flip-book/a1b2c3d4e5.html' } };
+  assert.equal(publicUrl(fb, 'docs.aflip.in'), 'https://docs.aflip.in/a1b2c3d4e5.html');
+  assert.equal(publicUrl(fb, 'https://docs.aflip.in/'), 'https://docs.aflip.in/a1b2c3d4e5.html');
+  assert.equal(publicUrl(fb, ''), 'https://heyzine.com/flip-book/a1b2c3d4e5.html');
+  const custom = { id: FULL, links: { custom: 'https://docs.example.com/my-slug', base: 'https://heyzine.com/flip-book/a1b2c3d4e5.html' } };
   assert.equal(publicUrl(custom, ''), 'https://docs.example.com/my-slug');
-  assert.equal(publicUrl({ url: 'https://heyzine.com/flip-book/<short>.html' }, 'docs.aflip.in'), 'https://docs.aflip.in/<short>.html');
+  assert.equal(publicUrl({ url: 'https://heyzine.com/flip-book/a1b2c3d4e5.html' }, 'docs.aflip.in'), 'https://docs.aflip.in/a1b2c3d4e5.html');
   assert.equal(publicUrl({}, 'docs.aflip.in'), null);
 });
 

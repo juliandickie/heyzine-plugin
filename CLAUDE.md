@@ -3,13 +3,13 @@
 ## What This Plugin Does
 
 Publishes PDFs (and Word, PowerPoint, OpenDocument, RTF) as Heyzine flipbooks and
-carries them to where the reference account and Pro Marketing use them - lead magnets, LearnDash
+carries them to where they are used - lead magnets, LearnDash
 course material, website embeds, bookshelves, access lists. Two ways in share
 one key resolver - the `heyzine` CLI (REST, JSON, unattended, primary path for
 skills) and an MCP bridge (mcp-remote against https://heyzine.com/mcp, the
 conversational path). The register of what was published lives inside Heyzine
 as tags and a private note. Sibling plugins (Scribe for Drive, Short.io tools
-for the short domain, wp-manager and the academy tooling for LearnDash) are composed by
+for short links, wp-manager and the academy tooling for LearnDash) are composed by
 capability reference in skill prose, never by importing their tools.
 
 ## Repo Layout Rules

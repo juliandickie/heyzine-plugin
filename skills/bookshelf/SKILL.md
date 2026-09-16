@@ -12,7 +12,7 @@ never copies or deletes a flipbook.
 ## What the API cannot do
 
 Create, rename, delete, or reorder a shelf in place. Say so plainly and point at the
-Heyzine bookshelf editor for those. The the reference account account has eight shelves (reviews by
+Heyzine bookshelf editor for those. The reference account has eight shelves (reviews by
 category, course companions, workflow guidebooks).
 
 ## Commands

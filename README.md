@@ -20,9 +20,8 @@ hosted server at https://heyzine.com/mcp for conversational use.
 ## Status
 
 0.1.3, released 2026-09-15 - private GitHub repo, listed in the outfit and ai-loadout
-catalogs, installed as `heyzine@outfit`. First real batch done the same night - 37 academy
-review PDFs converted, registered and linked from the short domain (dev-docs/smoke-run-2026-09-15.md).
-Latest handoff - dev-docs/SESSION-HANDOFF-2026-09-15-night.md.
+catalogs, installed as `heyzine@outfit`. First real batch done the same night - 37 course review PDFs converted, registered and
+linked from their short links. Account records live outside the repo.
 
 ## Install
 
@@ -67,6 +66,7 @@ template_id = ""
 url_domain = ""
 staging_folder_id = ""
 default_tags = "published-by:heyzine-plugin"
+title_suffixes = ""              # comma list of trailing brand suffixes reconcile ignores, for example "acme"
 ```
 
 Then verify.
@@ -89,8 +89,8 @@ until it is added.
 | `heyzine` | Overview and router - which skill to use, the register schema, the link rules, the plan gates, the two ways in |
 | `/heyzine:setup` | First run configuration of the key, client id, public host, template and Drive staging folder, then `heyzine whoami` |
 | `/heyzine:publish` | One document end to end - stage, convert, template, purpose defaults, social card, register, verify both URLs |
-| `/heyzine:lead-magnet` | The share kit for a free download - both URLs, oEmbed iframe, button and anchor snippets, an the short domain short link, the social card |
-| `/heyzine:course-material` | A course PDF into LearnDash Materials with a course-prefixed the short domain link and the chapter and lesson snippets |
+| `/heyzine:lead-magnet` | The share kit for a free download - both URLs, oEmbed iframe, button and anchor snippets, a short link, the social card |
+| `/heyzine:course-material` | A course PDF into LearnDash Materials with a course-prefixed short link and the chapter and lesson snippets |
 | `/heyzine:bookshelf` | List, inspect, fill, order and brand bookshelves |
 | `/heyzine:access` | Shared password, per-user credentials, Google sign in, one-time codes and email links, bulk grants and revocation |
 | `/heyzine:inventory` | Refresh the cache, list by tag or course, search the full text of every flipbook, read one page, reconcile a names list against the account |
@@ -191,7 +191,7 @@ Tags are `facet:value` pairs.
 |---|---|
 | `purpose:` | `lead-magnet`, `course-material`, `review`, `event`, `catalog`, `other` |
 | `course:` | The course slug, for example `course:pcp` |
-| `link:` | The the short domain short link slug |
+| `link:` | The short link slug |
 | `source:` | `drive` or `url` |
 | `published-by:` | `heyzine-plugin` |
 
@@ -202,8 +202,8 @@ The private note is `key = value` lines.
 | `source_drive_id` | The Drive file id of the staged source, when there is one |
 | `source_name` | The resource name the flipbook was published under |
 | `source_url` | The source URL, when the source was not a Drive file |
-| `idd_to` | The the short domain short link slug |
-| `embedded` | Semicolon separated placements, for example `academy:chapter:123; academy:lesson:123` |
+| `idd_to` | The short link slug |
+| `embedded` | Semicolon separated placements, for example `academy:chapter:123; academy:lesson:124` |
 | `published` | The publish date |
 | `published_by` | `heyzine-plugin` |
 
@@ -216,10 +216,10 @@ building tags. Passwords and access lists never go into either. `heyzine details
 
 ## Link rules
 
-- Share URLs are reported on the configured public host (`docs.aflip.in` for the reference account) as well
+- Share URLs are reported on the configured public host (for example `docs.aflip.in`) as well
   as on heyzine.com. Both serve the same flipbook by the same short id.
 - Human facing links (academy materials, support replies, SMS, social posts) go through
-  an the short domain short link made with the Short.io tools, named by resource type
+  a short link made with the Short.io tools, named by resource type
   (`ios-review-medit-i900`) or course prefix (`pcp-flowchart-zirconia`), so a hosting
   change is one Short.io edit rather than a hunt. ActiveCampaign emails use the full
   direct URL, never a short link.
@@ -243,7 +243,7 @@ Short form, current as at 2026-09-15. The full matrix is in
 | Five flipbooks, unlimited pages, API access | Free |
 | `flipbook-replace` | Support enablement on any paid plan |
 
-the reference account is on Premium. When the server refuses a feature it returns a plan message. Repeat
+The reference account is on Premium. When the server refuses a feature it returns a plan message. Repeat
 that message verbatim and stop; never downgrade the request silently. Free accounts keep
 five flipbooks and drop the oldest past the cap.
 
@@ -281,7 +281,7 @@ The contract the launcher keeps, asserted by `test/launcher.test.js`.
 - A PDF can be replaced in place two ways, and both have a catch. `convert --replace`
   works on any account but runs on the blocking endpoint, so a large document can take a
   while and a reconversion may reset reader statistics. `flipbook-replace` keeps more
-  intact but is support gated and is not enabled for the reference account.
+  intact but is support gated and is not enabled on the reference account.
 - Access entries cannot be read back. `access-setup`, `access-add` and `access-remove`
   all work, but no list endpoint exists, so who has access has to be tracked wherever
   the grants were issued from.

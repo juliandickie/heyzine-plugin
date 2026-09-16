@@ -1,6 +1,6 @@
 ---
 name: course-material
-description: Publish a course PDF as a Heyzine flipbook and hand it to LearnDash - course-prefixed the short domain link through the Short.io tools, the Materials snippet in the light or PCP format for the chapter and the lesson, the description anchor line, and the register entry. Use when the user says course resource, chapter PDF, lesson materials, add this PDF to the academy, flipbook for the course, or replace the PDF in a lesson.
+description: Publish a course PDF as a Heyzine flipbook and hand it to LearnDash - course-prefixed short link through the Short.io tools, the Materials snippet in the light or PCP format for the chapter and the lesson, the description anchor line, and the register entry. Use when the user says course resource, chapter PDF, lesson materials, add this PDF to the academy, flipbook for the course, or replace the PDF in a lesson.
 argument-hint: "<file, Drive link or URL> --name \"<Resource Name>\" --course <slug> [--chapter <id>] [--lesson <id>]"
 ---
 
@@ -17,9 +17,9 @@ Check first whether the resource already has a flipbook (`heyzine inventory`, or
 `heyzine reconcile` for a list) - many academy PDFs do, and a second copy splits the
 statistics and the links.
 
-## 2. the short domain link
+## 2. short link
 
-Every academy link to a hosted resource goes through an the short domain link so a hosting change
+Every academy link to a hosted resource goes through a short link so a hosting change
 is one Short.io edit. Use the Short.io tools - search by destination, reuse an existing
 link (the six PCP documents already have `pcp-*` links), otherwise create one. Slug
 rule - course prefix for a course's own resources (`pcp-flowchart-zirconia`,
@@ -37,17 +37,17 @@ Two formats are in use; the user chooses per course.
 Light (the free PDF courses, where the PDF is the product) - one line per PDF:
 
 ```html
-<p><a href="https://the short domain/<slug>">Resource Name</a></p>
+<p><a href="https://<short domain>/<slug>">Resource Name</a></p>
 ```
 
 PCP paragraph (a course's companion resources):
 
 ```html
-<p><strong>Resource Name (PDF).</strong> One sentence on what it is for. <a href="https://the short domain/<slug>">Resource Name</a>.</p>
+<p><strong>Resource Name (PDF).</strong> One sentence on what it is for. <a href="https://<short domain>/<slug>">Resource Name</a>.</p>
 ```
 
 Description anchor line, when the chapter or lesson description should mention it -
-`[Resource Name](https://the short domain/<slug>)`. The anchor is always the resource name,
+`[Resource Name](https://<short domain>/<slug>)`. The anchor is always the resource name,
 never the URL or the filename.
 
 ## 4. Hand off to LearnDash
@@ -75,6 +75,6 @@ Premium.
 
 `heyzine details <id> --json` must show `purpose:course-material`, `course:<slug>`,
 `link:<slug>`, and `embedded` naming the chapter and lesson. Open the public host URL
-and the the short domain link (read its configured destination from the Short.io tools, not the
-HTTP status). Report the URL, the the short domain link, the snippet, and the exact chapter and
+and the short link (read its configured destination from the Short.io tools, not the
+HTTP status). Report the URL, the short link, the snippet, and the exact chapter and
 lesson ids the snippet is for.

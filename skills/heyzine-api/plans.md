@@ -1,6 +1,6 @@
 # Heyzine plans and feature gates
 
-Captured 2026-09-15. Source - the pricing section of https://heyzine.com/#product (raw HTML feature lists including tooltip text), the developers page, and the live MCP tool descriptions. the reference account is on the **Premium** plan (Julian, 2026-09-15), confirmed by the account listing 8 bookshelves.
+Captured 2026-09-15. Source - the pricing section of https://heyzine.com/#product (raw HTML feature lists including tooltip text), the developers page, and the live MCP tool descriptions. The reference account is on the **Premium** plan (confirmed 2026-09-15 by the account listing 8 bookshelves).
 
 Prices are set dynamically on the page and changed between two fetches the same day (USD 84 / 156 / 324 yearly in the morning fetch, 59 / 108 / 228 in the afternoon fetch). Treat prices as indicative and the feature gates as the useful part.
 

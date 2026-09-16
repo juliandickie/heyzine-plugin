@@ -44,16 +44,15 @@ test('mergeNote overrides fields and preserves the rest', () => {
 test('buildRegister produces the spec section 5 shape', () => {
   const r = buildRegister({
     purpose: 'course-material', course: 'PCP', iddTo: 'pcp-flowchart-zirconia', sourceDriveId: '1AbC',
-    sourceName: 'Flowchart - Zirconia.pdf', embedded: ['academy:chapter:123', 'academy:lesson:123'],
+    sourceName: 'Flowchart - Zirconia.pdf', embedded: ['academy:chapter:123', 'academy:lesson:124'],
     today: '2026-09-15', extraTags: 'published-by:heyzine-plugin,summer',
   });
   assert.equal(r.tags, 'published-by:heyzine-plugin,summer,purpose:course-material,course:pcp,link:pcp-flowchart-zirconia,source:drive');
   assert.equal(r.private_note, [
     'source_drive_id = 1AbC', 'source_name = Flowchart - Zirconia.pdf', 'idd_to = pcp-flowchart-zirconia',
-    'embedded = academy:chapter:123; academy:lesson:123', 'published = 2026-09-15',
+    'embedded = academy:chapter:123; academy:lesson:124', 'published = 2026-09-15', 'published_by = heyzine-plugin',
   ].join('\n'));
-  // The spec shape is 201 characters with published_by; the cap drops that line first (the tag carries it).
-  assert.deepEqual(r.note_dropped, ['published_by']);
+  assert.deepEqual(r.note_dropped, []);
   const u = buildRegister({ purpose: 'lead-magnet', sourceUrl: 'https://x/y.pdf', today: '2026-09-15' });
   assert.equal(u.tags, 'purpose:lead-magnet,source:url,published-by:heyzine-plugin');
   assert.match(u.private_note, /^source_url = https:\/\/x\/y\.pdf\n/);
@@ -63,8 +62,8 @@ test('buildRegister produces the spec section 5 shape', () => {
 });
 
 test('fitNote drops published_by, then source_url, then source_name until the note fits 200 characters', () => {
-  const longUrl = '<source url>' + 'x'.repeat(120) + '.pdf';
-  const fields = { source_name: 'A long resource name for a review document', source_url: longUrl, idd_to: 'slug', embedded: 'academy:chapter:123', published: '2026-09-15', published_by: 'heyzine-plugin' };
+  const longUrl = 'https://courses.example.com/wp-content/uploads/2024/10/' + 'x'.repeat(120) + '.pdf';
+  const fields = { source_name: 'A long resource name for a review document', source_url: longUrl, idd_to: 'slug', embedded: 'academy:chapter:456', published: '2026-09-15', published_by: 'heyzine-plugin' };
   const { note, dropped } = fitNote({ fields });
   assert.ok(note.length <= NOTE_MAX, note.length);
   assert.deepEqual(dropped, ['published_by', 'source_url']);

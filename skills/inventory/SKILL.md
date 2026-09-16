@@ -39,20 +39,20 @@ heyzine reconcile <file> --json
 
 The file may be a markdown table with an "Anchor name" column (the academy resource
 decks), a CSV with a `name` column, or one name per line. Titles are normalised
-(case, punctuation, "PDF", "Review PDF", trailing "- the reference account") and matched exact, then by
+(case, punctuation, "PDF", "Review PDF", a configured trailing brand suffix, `title_suffixes` in the config file) and matched exact, then by
 token overlap of at least 0.8, then by substring. Each row comes back as `exists`
 (one clear match with id, url and current `idd_to`), `ambiguous` (candidates listed;
 decide by eye and never auto-pick), or `missing` (the create list). A substring-tier
 match is always `ambiguous`, never `exists`, even when it is the only candidate - a
 human decides. Several candidates at any tier are also `ambiguous`. Present the three
-groups with counts. For `exists` rows whose the short domain link still points at a wp-content
+groups with counts. For `exists` rows whose short link still points at a wp-content
 PDF, the follow-up is a Short.io edit to the public host URL, not a new flipbook.
 
 `heyzine reconcile <file> --csv` writes a spreadsheet shape instead, with columns
 `name, status, id, short, title, url, idd_to, candidates` (candidates flattened to one
 cell as `short title (tier)` joined by `; ` so the file opens cleanly in Sheets).
 
-Existing example - the 2026-09-15 academy bridge deck listed 55 PDFs as "please
+Example - a course bridge deck listed 55 PDFs as "please
 create"; at least twelve already had flipbooks in the account.
 
 ## Report

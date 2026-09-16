@@ -5,19 +5,19 @@ import {
 } from '../lib/inventory.mjs';
 
 const item = (id, title, extra = {}) => ({ id, title, pages: 1, links: { custom: `https://heyzine.com/flip-book/${id.slice(0, 10)}.html`, base: `https://heyzine.com/flip-book/${id.slice(0, 10)}.html` }, tags: '', private: '', ...extra });
-const A = item('<short>9f7530f7df74161a1eddc6f87ebac7.pdf', 'Medit i900 Intraoral Scanner Review', { tags: 'purpose:review,link:ios-review-medit-i900', private: 'idd_to = ios-review-medit-i900' });
-const B = item('<short>91f3029d392b65eaf26a5815e3b4e5.pdf', 'CAD/CAM Chairside Materials Overview - the reference account');
-const C = item('<short>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf', 'Chairside Processing of Monolithic Zirconia Restorations - Ceramic Restoration Workflows');
+const A = item('7777777777aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf', 'Medit i900 Intraoral Scanner Review', { tags: 'purpose:review,link:ios-review-medit-i900', private: 'idd_to = ios-review-medit-i900' });
+const B = item('a1b2c3d4e5f60718293a4b5c6d7e8f9012345678.pdf', 'CAD/CAM Chairside Materials Overview');
+const C = item('0d0d0d0d0daaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf', 'Chairside Processing of Monolithic Zirconia Restorations - Ceramic Restoration Workflows');
 const D = item('1111111111aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf', 'Medit i900 Classic Review PDF');
 const cacheOf = (items) => ({ fetched_at: 'x', count: items.length, items: items.map((i) => ({ ...i, register: { fields: {}, other: [] }, facets: {} })), bookshelves: [{ id: 'a16ec9269b8d436092e69be09a107d1d264e9f18', title: 'Perfect Ceramic Processing PDFs' }], bookshelves_error: null });
 
-test('normaliseTitle strips PDF markers, the reference account suffixes and punctuation', () => {
-  assert.equal(normaliseTitle('CAD/CAM Chairside Materials Overview - the reference account'), 'cad cam chairside materials overview');
+test('normaliseTitle strips PDF markers, configured brand suffixes and punctuation', () => {
+  assert.equal(normaliseTitle('CAD/CAM Chairside Materials Overview - ACME', { suffixes: ['acme'] }), 'cad cam chairside materials overview');
   assert.equal(normaliseTitle('Medit i900 Classic Review PDF'), 'medit i900 classic review');
   assert.equal(normaliseTitle('Alliedstar AS 260 Review PDF'), 'alliedstar as 260 review');
-  assert.equal(normaliseTitle('  Zirconia Guide from Indication to Cementation - the reference account '), 'zirconia guide from indication to cementation');
+  assert.equal(normaliseTitle('  Zirconia Guide from Indication to Cementation - ACME ', { suffixes: ['acme'] }), 'zirconia guide from indication to cementation');
   assert.equal(normaliseTitle('Formlabs Form 4B Review – Breaking Free'), 'formlabs form 4b review breaking free');
-  assert.equal(normaliseTitle('Scanner Guide - the reference account.'), 'scanner guide');
+  assert.equal(normaliseTitle('Scanner Guide - ACME.', { suffixes: ['acme'] }), 'scanner guide');
 });
 
 test('overlap and matchTitle tiers', () => {
@@ -34,7 +34,7 @@ test('overlap and matchTitle tiers', () => {
 });
 
 test('parseNamesFile handles a markdown table, a csv and plain lines', () => {
-  const md = ['# deck', '', '| # | Course | Anchor name | the short domain slug |', '|---|---|---|---|', '| 1 | X | 3DISC Heron Intraoral Scanner Review | ios-review-3disc-heron |', '| 2 | Y | Medit i600 Intraoral Scanner Review | ios-review-medit-i600 |'].join('\n');
+  const md = ['# deck', '', '| # | Course | Anchor name | short slug |', '|---|---|---|---|', '| 1 | X | 3DISC Heron Intraoral Scanner Review | ios-review-3disc-heron |', '| 2 | Y | Medit i600 Intraoral Scanner Review | ios-review-medit-i600 |'].join('\n');
   assert.deepEqual(parseNamesFile(md), ['3DISC Heron Intraoral Scanner Review', 'Medit i600 Intraoral Scanner Review']);
   assert.deepEqual(parseNamesFile('name,slug\n"A, B",x\nC,y\n'), ['A, B', 'C']);
   assert.deepEqual(parseNamesFile('# comment\nOne\n\nTwo\n'), ['One', 'Two']);
@@ -64,8 +64,8 @@ test('loadInventory returns null when the cache is missing and resolveFullId fin
   assert.equal(await loadInventory({ dir: '/d', readFile: async () => { const e = new Error('x'); e.code = 'ENOENT'; throw e; } }), null);
   assert.equal(inventoryPath('/d'), '/d/inventory.json');
   const cache = cacheOf([A, B]);
-  assert.deepEqual(resolveFullId('<short>', cache), { kind: 'flipbook', full: A.id });
-  assert.deepEqual(resolveFullId('https://docs.aflip.in/<short>.html', cache), { kind: 'flipbook', full: B.id });
+  assert.deepEqual(resolveFullId('7777777777', cache), { kind: 'flipbook', full: A.id });
+  assert.deepEqual(resolveFullId('https://docs.aflip.in/a1b2c3d4e5.html', cache), { kind: 'flipbook', full: B.id });
   assert.deepEqual(resolveFullId(A.id, cache), { kind: 'flipbook', full: A.id });
   assert.deepEqual(resolveFullId('https://heyzine.com/shelf/a16ec9269b.html', cache), { kind: 'bookshelf', full: 'a16ec9269b8d436092e69be09a107d1d264e9f18' });
   assert.deepEqual(resolveFullId('a16ec9269b8d436092e69be09a107d1d264e9f18', cache), { kind: 'bookshelf', full: 'a16ec9269b8d436092e69be09a107d1d264e9f18' });
@@ -78,8 +78,8 @@ test('reconcile classifies exists, ambiguous and missing with public host urls',
   cache.items[1].register.fields.idd_to = 'cadcam-materials-overview';
   const rows = reconcile(['CAD/CAM Chairside Materials Overview', 'Medit i900 Intraoral Scanner Review', 'Nothing like this at all'], cache, { publicHost: 'docs.aflip.in' });
   assert.equal(rows[0].status, 'exists');
-  assert.equal(rows[0].short, '<short>');
-  assert.equal(rows[0].url, 'https://docs.aflip.in/<short>.html');
+  assert.equal(rows[0].short, 'a1b2c3d4e5');
+  assert.equal(rows[0].url, 'https://docs.aflip.in/a1b2c3d4e5.html');
   assert.equal(rows[0].idd_to, 'cadcam-materials-overview');
   assert.equal(rows[1].status, 'ambiguous');
   assert.equal(rows[1].candidates.length, 2);

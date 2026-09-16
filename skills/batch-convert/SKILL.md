@@ -78,7 +78,7 @@ key; nothing needs a person present.
   `curl -sS -o /dev/null -D - -r 0-0 "<url>"`. A non-public Drive file shows as a
   `content-type text/html` warning caught at the preflight - fix the file's sharing to
   anyone-with-link and re-run; only the failed rows convert again.
-- Short links - for each converted row with `idd_to`, create or edit the the short domain link
+- Short links - for each converted row with `idd_to`, create or edit the short link
   with the Short.io tools to the public host URL. Write the results CSV back to the
   Sheet with the Scribe plugin's Sheets tools when the batch came from one.
 - Verify by looking - open three public URLs across the batch, not just one.

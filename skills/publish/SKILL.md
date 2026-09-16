@@ -52,7 +52,7 @@ Override any default with a design flag (`--download false`).
 ## 4. Publish
 
 ```bash
-heyzine publish "<source>" --name "<Resource Name>" --purpose <purpose> [--course <slug>] [--idd-to <slug>] [--description "<one line>"] [--template <id>] [--embedded "academy:chapter:123; academy:lesson:123"] [--note "<free text>"] --json
+heyzine publish "<source>" --name "<Resource Name>" --purpose <purpose> [--course <slug>] [--idd-to <slug>] [--description "<one line>"] [--template <id>] [--embedded "academy:chapter:123; academy:lesson:124"] [--note "<free text>"] --json
 ```
 
 The command converts (polling every 5 s, up to 15 min), applies the configured
@@ -79,7 +79,7 @@ id, same URL), then:
 heyzine convert "$(heyzine drive-url <file id> --json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).url")" --replace --wait --json
 ```
 
-The id, both public URLs and the the short domain link survive. Confirm `heyzine details <id>`
+The id, both public URLs and the short link survive. Confirm `heyzine details <id>`
 shows the new page count. After a revision, refresh the `published` date: read the
 current note with `heyzine details <id> --json`, edit the `published` line, and write
 it back with `heyzine design <id> --private-note "<full note>"` (the design command

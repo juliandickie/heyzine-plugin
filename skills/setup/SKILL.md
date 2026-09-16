@@ -12,8 +12,7 @@ Run once per machine, and again whenever the key rotates.
 ## 1. Get the credentials
 
 Both values are on https://heyzine.com/developers#apikey after logging in - the API key
-(secret) and the client id (not secret, needed by the REST convert endpoints). For the reference account
-the key is in the the reference account 1Password vault, item "API Heyzine".
+(secret) and the client id (not secret, needed by the REST convert endpoints). The key can live in 1Password as an `op://` reference.
 
 ## 2. Choose how the key is supplied
 
@@ -56,7 +55,7 @@ what the probes observed; it does not name the plan. A missing client id shows a
 
 ## 4. Public host
 
-For the reference account set `public_host = "docs.aflip.in"`. The API reports heyzine.com links; the
+Set `public_host` to your white-label host. The API reports heyzine.com links; the
 plugin rewrites share URLs onto this host (same short id, verified to serve). Confirm
 once by opening `https://<host>/<short>.html` for any existing flipbook from
 `heyzine list`.

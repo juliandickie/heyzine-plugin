@@ -22,7 +22,7 @@ test('shortId from every accepted form', () => {
   assert.equal(shortId('https://heyzine.com/flip-book/a1b2c3d4e5.html'), 'a1b2c3d4e5');
   assert.equal(shortId('https://heyzine.com/flip-book/a1b2c3d4e5.html?x=1#p2'), 'a1b2c3d4e5');
   assert.equal(shortId('https://docs.aflip.in/0d0d0d0d0d.html'), '0d0d0d0d0d');
-  assert.equal(shortId('https://heyzine.com/shelf/<short>.html'), '<short>');
+  assert.equal(shortId('https://heyzine.com/shelf/b2b2b2b2b2.html'), 'b2b2b2b2b2');
   assert.equal(shortId('https://heyzine.com/shelf/perfect-ceramic-processing-pdfs'), null);
   assert.equal(shortId('nonsense'), null);
 });

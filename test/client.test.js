@@ -102,7 +102,7 @@ test('transient failures retry three times with the backoff schedule, then throw
 
 test('mcpCall posts a tools/call envelope and unwraps text or JSON results', async () => {
   const { fetch, calls } = fakeFetch([
-    { body: { jsonrpc: '2.0', id: 1, result: { content: [{ type: 'text', text: '{"success":true,"data":[{"flipbook":"<short>.html","page":6,"text":"zirconia"}]}' }] } } },
+    { body: { jsonrpc: '2.0', id: 1, result: { content: [{ type: 'text', text: '{"success":true,"data":[{"flipbook":"b2b2b2b2b2.html","page":6,"text":"zirconia"}]}' }] } } },
     { body: { jsonrpc: '2.0', id: 1, result: { content: [{ type: 'text', text: 'Plain page text' }] } } },
     { body: { jsonrpc: '2.0', id: 1, result: { isError: true, content: [{ type: 'text', text: 'Bookshelf tools require a plan that includes bookshelves' }] } } },
     { body: { jsonrpc: '2.0', id: 1, error: { code: -32602, message: 'Unknown tool' } } },
@@ -110,7 +110,7 @@ test('mcpCall posts a tools/call envelope and unwraps text or JSON results', asy
   ]);
   const c = new HeyzineClient({ key: 'K', fetch, sleep: noSleep });
   const hits = await c.searchText('zirconia');
-  assert.deepEqual(hits, [{ flipbook: '<short>.html', page: 6, text: 'zirconia' }]);
+  assert.deepEqual(hits, [{ flipbook: 'b2b2b2b2b2.html', page: 6, text: 'zirconia' }]);
   assert.equal(calls[0].url, 'https://heyzine.com/mcp');
   assert.equal(calls[0].init.headers['MCP-Protocol-Version'], '2025-06-18');
   assert.equal(calls[0].init.headers.Accept, 'application/json, text/event-stream');

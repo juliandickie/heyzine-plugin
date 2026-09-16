@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.4 - 2026-09-16
+
+- New setting `title_suffixes` (config file or `TITLE_SUFFIXES`) - a comma list of trailing
+  brand suffixes that `reconcile` ignores when matching names to titles. The suffix was
+  hard coded before.
+- Public release scrub - account identifiers and session records are out of the tracked
+  tree and the git history (history rewritten, tags re-pointed). Skills, README and tests
+  use example hosts, ids and placements.
+
 ## 0.1.3 - 2026-09-15
 
 - Fix - Heyzine keeps at most 200 characters of private note. Over that, `flipbook-design`

@@ -1,6 +1,6 @@
 {
   "name": "heyzine-plugin",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "type": "module",
   "description": "Claude Code plugin - Heyzine flipbook publishing (REST CLI plus MCP bridge)",

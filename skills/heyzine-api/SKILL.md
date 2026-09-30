@@ -18,7 +18,10 @@ developers page and the live server differ, the live server wins and is noted.
 - Errors come back as HTTP 200 with `{"success": false, "code": 403, "msg": "..."}`.
   `Invalid user or api key` means the key is wrong; `Unauthorized` on a details call
   means the id is not in the account or is a short id (REST needs the full id);
-  `Private API endpoint. Contact support@heyzine.com` means a support-gated endpoint.
+  `Private API endpoint. Contact support@heyzine.com` means a support-gated endpoint
+  the account has not been enabled for. Code 422 `The URL is not a direct link to a file
+  or is an invalid file type` from `flipbook-replace` means the source was not served as
+  `application/pdf` to a plain request (see the replace row below).
   Unknown endpoints answer an HTML 404 page.
 
 ## Ids and URLs
@@ -42,7 +45,7 @@ developers page and the live server differ, the live server wins and is noted.
 | `publish <source> --name ... [--purpose --course --idd-to --template --replace --note --description --embedded --skip-verify]` | convert, `flipbook-social`, `flipbook-details`, live GET of both URLs |
 | `design <id> [--idd-to slug] [design flags]` | `PATCH flipbook-design` (only supplied fields; `--idd-to` records the short link) |
 | `social <id> --title --description --thumbnail` | `POST flipbook-social` |
-| `replace-pdf <id> <url>` | `POST flipbook-replace` (support-gated) |
+| `replace-pdf <id> <url>` | `POST flipbook-replace` (support-gated; source must be served as `application/pdf`) |
 | `delete <id> --confirm "<title>"` | `POST flipbook-delete` |
 | `shelves`, `shelf <id>`, `shelf-add <shelf> <fb> [--position]`, `shelf-remove`, `shelf-social` | `bookshelf-list`, `bookshelf-flipbooks`, `bookshelf-add`, `bookshelf-remove`, `bookshelf-social` |
 | `access-setup <id> --mode`, `access-add <id> --access-type`, `access-remove <id>` | `access-setup`, `access-add`, `access-remove` (sends `id` and `name`) |
@@ -92,7 +95,7 @@ the `page-text` page argument) are refused as usage errors unless they are numbe
 | `flipbook-details` | GET | `id` (full) | Adds `tags`, `oembed` |
 | `flipbook-design` | PATCH | `id` plus any design field | Only supplied fields change; `url_path` and `url_domain` change the public link |
 | `flipbook-social` | POST | `id`, `title`, `description`, `thumbnail` | Open Graph card; networks cache the old card |
-| `flipbook-replace` | POST | `id`, `pdf` | Support-gated (refused until support enables the account) |
+| `flipbook-replace` | POST | `id`, `pdf` | Support-gated (refused until support enables the account). Synchronous, about 5 s; answers `id`, `url`, `thumbnail`, `pdf`, `meta.num_pages`. Any URL, not only the original, but it must be served as `application/pdf` (or the matching office type) to a plain request - Drive download links (`application/octet-stream`), `application/pdf; qs=...` and hosts that block an empty User-Agent are refused with code 422. A Heyzine CDN PDF URL is a valid source |
 | `flipbook-delete` | POST | `id` | Permanent |
 | `bookshelf-list` | GET | | Premium. `{id, date, title, subtitle, description, flipbook_count, links{url, thumbnail}}` |
 | `bookshelf-flipbooks` | GET | `id` | Adds `position` (zero-based) |

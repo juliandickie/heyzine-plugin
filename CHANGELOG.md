@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.5 - 2026-09-30
+
+- `replace-pdf` tested live after Heyzine support enabled the endpoint on the reference
+  account. It is synchronous (about five seconds), accepts a different source URL, and
+  keeps the id, URLs, title, tags, note and design. Its source check is stricter than
+  convert's - the URL must be served as `application/pdf` to a plain request, so Google
+  Drive download links and hosts that block an empty User-Agent are refused. The CLI now
+  adds that explanation, and the Drive alternative, to the refusal message.
+- Skills, README and the plans table no longer say replace is unavailable; the publish
+  skill documents when to use `replace-pdf` and when to stay on `convert --replace`.
+- Setup skill gains a team members section - a key belongs to one account, the part
+  after the dot is that account's client id, and resetting keys breaks every operator.
+- Two audit notes added under dev-docs (2026-09-25 team member keys, 2026-09-30 replace).
+
 ## 0.1.4 - 2026-09-16
 
 - New setting `title_suffixes` (config file or `TITLE_SUFFIXES`) - a comma list of trailing

@@ -83,8 +83,15 @@ The id, both public URLs and the short link survive. Confirm `heyzine details <i
 shows the new page count. After a revision, refresh the `published` date: read the
 current note with `heyzine details <id> --json`, edit the `published` line, and write
 it back with `heyzine design <id> --private-note "<full note>"` (the design command
-overwrites the whole note, so always write the full text). `replace-pdf` is the
-alternative only for accounts Heyzine support has enabled.
+overwrites the whole note, so always write the full text).
+
+When the new edition lives at a DIFFERENT URL, use `heyzine replace-pdf <id> <url> --json`
+(the account must be enabled by Heyzine support). It answers in about five seconds with
+the new page count, and the id, both public URLs, title, tags, note and design survive.
+The source must be served as `application/pdf` to a plain request - a Google Drive
+download link is refused (it is served as `application/octet-stream`), and so is a host
+that blocks requests with no User-Agent. A refusal leaves the flipbook untouched. For a
+Drive-staged source keep to the overwrite-and-`convert --replace` path above.
 
 ## 6. Verify by looking
 

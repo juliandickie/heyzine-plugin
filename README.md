@@ -19,9 +19,10 @@ hosted server at https://heyzine.com/mcp for conversational use.
 
 ## Status
 
-0.1.3, released 2026-09-15 - private GitHub repo, listed in the outfit and ai-loadout
-catalogs, installed as `heyzine@outfit`. First real batch done the same night - 37 course review PDFs converted, registered and
-linked from their short links. Account records live outside the repo.
+0.1.5, released 2026-09-30 - public GitHub repo, listed in the outfit and ai-loadout
+catalogs, installed as `heyzine@outfit`. In use since 2026-09-15, when the first real
+batch converted, registered and linked 37 course review PDFs. The replace endpoint was
+tested live on 2026-09-30. Account records live outside the repo.
 
 ## Install
 
@@ -113,7 +114,7 @@ public URL, and are resolved through the inventory cache or a live list.
 | `publish <source> --name <name> [--purpose P] [--course C] [--idd-to slug] [--template id] [--replace] [--note text] [--description text] [--embedded list] [--skip-verify] [design flags]` | The whole flow - preflight, convert, template, purpose defaults, social card, register, details, live GET of both URLs |
 | `design <id> [--idd-to slug] [design flags]` | Change only the design fields supplied. `--idd-to` records a short link, replacing the `link:` tag and setting `idd_to` in the note |
 | `social <id> [--title T] [--description D] [--thumbnail URL]` | The Open Graph card |
-| `replace-pdf <id> <url>` | The support-gated replace endpoint. Refused unless Heyzine has enabled the account |
+| `replace-pdf <id> <url>` | Replace a flipbook's document from any URL served as `application/pdf`, keeping id, URLs, register and design. Refused unless Heyzine support has enabled the account |
 | `delete <id> --confirm "<exact current title>"` | Permanent deletion, refused without the exact title |
 | `shelves` | List bookshelves (Premium) |
 | `shelf <id\|url>` | The flipbooks on one shelf in display order |
@@ -279,9 +280,15 @@ The contract the launcher keeps, asserted by `test/launcher.test.js`.
 - Bookshelves cannot be created or deleted through the API. Create the shelf in the
   Heyzine web app, then fill and order it with `shelf-add` and `shelf-remove`.
 - A PDF can be replaced in place two ways, and both have a catch. `convert --replace`
-  works on any account but runs on the blocking endpoint, so a large document can take a
-  while and a reconversion may reset reader statistics. `flipbook-replace` keeps more
-  intact but is support gated and is not enabled on the reference account.
+  works on any account and on any source convert accepts (Google Drive included), but
+  only for the URL the flipbook was first made from, and a reconversion may reset reader
+  statistics. `replace-pdf` takes a different URL and answers in about five seconds, but
+  Heyzine support has to enable the account (ask by email) and the source must be served
+  as `application/pdf` to a plain request - Drive download links and hosts that block a
+  request with no User-Agent are refused. Tested 2026-09-30,
+  `dev-docs/api-audit-2026-09-30-replace.md`.
+- A subtitle cannot be cleared once set. The API ignores an empty string; a single space
+  is accepted and renders blank.
 - Access entries cannot be read back. `access-setup`, `access-add` and `access-remove`
   all work, but no list endpoint exists, so who has access has to be tracked wherever
   the grants were issued from.

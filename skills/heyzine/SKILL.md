@@ -70,8 +70,8 @@ either. `heyzine details <id> --json` shows both parsed.
 Converting the same URL twice returns the same flipbook. A revised edition is the same
 Drive file updated in place (same file id, same URL) then
 `heyzine convert <url> --replace --wait`, which keeps the id, both public URLs and the
-short link. `replace-pdf` needs Heyzine support to enable the account and is not
-enabled on the reference account.
+short link. `replace-pdf` (needs Heyzine support to enable the account) replaces the document from any URL, a different one included, in about five seconds, keeping the id, both public URLs, title, tags, note and design. Its source check is stricter than convert's - the URL must be served as `application/pdf` (or the matching office type) to a plain request, so Google Drive download links and hosts that block a request with no User-Agent are refused with a 422 body. Drive-staged
+sources therefore stay on the `convert --replace` path.
 
 ## Plan gates and limits
 

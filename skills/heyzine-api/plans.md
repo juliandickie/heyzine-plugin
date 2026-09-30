@@ -50,11 +50,11 @@ Add-ons - extra flipbook packs (10, 15, 25, 50) for accounts that need more than
 | `access-add` with `email_link`, `email_code`, `send_code` | Premium (advanced password protection) | plan message; the skill must not switch to another access type silently |
 | `access-add` with `user_pass`, `google`, `pass_only`, `otp` | Any plan | none |
 | Leads webhook | Professional or above (lead forms) | configured in the account UI only |
-| `flipbook-replace` (replace the source PDF in place) | Paid plan AND the account enabled by support@heyzine.com | `{"success":false,"code":403,"msg":"Private API endpoint. Contact support@heyzine.com for more details."}` - observed on the the reference account account 2026-09-15, so the reference account is NOT enabled; use convert with `replace: true` on the same URL instead |
+| `flipbook-replace` (replace the source PDF in place) | Paid plan AND the account enabled by support@heyzine.com | `{"success":false,"code":403,"msg":"Private API endpoint. Contact support@heyzine.com for more details."}` until enabled. The reference account was enabled on 2026-09-25 (asked by email, four days) and tested on 2026-09-30 |
 | Free plan flipbook cap | Free only | the oldest publications are removed past five |
 
 ## How the plugin uses this
 
 - `heyzine whoami` probes the gates that can be probed read-only (bookshelf listing) and reports them as observed facts, not as a plan name.
 - The `heyzine-api` skill carries this table so a request that needs a gated feature is answered with the gate before any call is made, and a server plan error is reported verbatim with the plan that would unlock it.
-- The default plan assumption for the reference account is Premium (everything available except `flipbook-replace`). For any other account the skills assume nothing and rely on the probe plus server messages.
+- The default plan assumption for the reference account is Premium (everything available, `flipbook-replace` included since 2026-09-25). For any other account the skills assume nothing and rely on the probe plus server messages.

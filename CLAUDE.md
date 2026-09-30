@@ -36,8 +36,9 @@ appears in argv, and is stripped from the child environment.
 
 Private note max 200 characters (over it the async convert silently drops title, tags,
 note and template; flipbook-design answers HTTP 500). Details, list and the rendered page
-lag `processed` by minutes; read back through `waitForRegister`, never once. Replace is
-honoured only by the blocking endpoints. REST errors are HTTP 200 bodies with
+lag `processed` by minutes; read back through `waitForRegister`, never once. `convert --replace` is
+honoured only by the blocking endpoints; `replace-pdf` needs support enablement and a
+source served as exactly application/pdf (Drive links refused). REST errors are HTTP 200 bodies with
 `success:false`. HEAD every source for application/pdf; an HTML 404 page still converts.
 
 ## Versioning

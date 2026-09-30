@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { HeyzineError } from '../lib/client.mjs';
 import { main, COMMANDS, designFields, parseBool, requireNumber } from '../lib/cli.mjs';
 
 const ID = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678.pdf';
@@ -378,4 +379,24 @@ test('an inventory cache of the wrong shape is unreadable, not an empty account'
     assert.equal(await main(['inventory'], h.deps), 2, body);
     assert.match(h.errText(), /usage: Inventory cache is unreadable .* run: heyzine inventory --refresh/);
   }
+});
+
+test('replace-pdf passes the id and url through and explains the source refusal', async () => {
+  const calls = [];
+  const ok = { listFlipbooks: async () => [{ id: ID }], replacePdf: async (id, url) => { calls.push([id, url]); return { id, pdf: 'p', meta: { num_pages: 2 } }; } };
+  const h = harness({ client: ok });
+  assert.equal(await main(['replace-pdf', ID, 'https://x/y.pdf', '--json'], h.deps), 0);
+  assert.deepEqual(calls, [[ID, 'https://x/y.pdf']]);
+  assert.equal(JSON.parse(h.text()).meta.num_pages, 2);
+
+  const refused = { listFlipbooks: async () => [{ id: ID }], replacePdf: async () => { throw new HeyzineError('validation', 'flipbook-replace: The URL is not a direct link to a file or is an invalid file type.'); } };
+  const h2 = harness({ client: refused });
+  assert.equal(await main(['replace-pdf', ID, 'https://drive.usercontent.google.com/download?id=abc&export=download'], h2.deps), 1);
+  assert.match(h2.errText(), /application\/pdf/);
+  assert.match(h2.errText(), /convert <same url> --replace/);
+
+  const other = { listFlipbooks: async () => [{ id: ID }], replacePdf: async () => { throw new HeyzineError('plan', 'flipbook-replace: Private API endpoint.'); } };
+  const h3 = harness({ client: other });
+  await main(['replace-pdf', ID, 'https://x/y.pdf'], h3.deps);
+  assert.doesNotMatch(h3.errText(), /application\/pdf/);
 });

@@ -14,6 +14,27 @@ Run once per machine, and again whenever the key rotates.
 Both values are on https://heyzine.com/developers#apikey after logging in - the API key
 (secret) and the client id (not secret, needed by the REST convert endpoints). The key can live in 1Password as an `op://` reference.
 
+### Team members
+
+A Heyzine API key belongs to one account, not to a person. The key is 40 hex characters,
+a dot, then the account's 16 character client id, so the part after the dot says which
+account a key opens. There is no team parameter in the API.
+
+- A team member who generates a key while their own personal space is selected gets a
+  key for that space. `heyzine whoami` then shows a handful of flipbooks, or none,
+  instead of the team's. Compare the part after the dot with the team account's client
+  id before configuring anything.
+- To work in the team's account an operator needs the team account's key and client id.
+  The dashboard switches accounts (`/admin?team=<n>`) and the developers page appears to
+  follow that selection, so selecting the team first and then opening
+  https://heyzine.com/developers#apikey should show the team's pair. This is NOT
+  verified; if it shows the personal pair, get the values from the account owner.
+- Never press the reset keys button while the team account is selected. Heyzine
+  disconnects every app authorised on the account, which breaks every other operator's
+  configuration at once.
+- Each operator still keeps the key in their own config file or password manager. It is
+  one shared secret per account, so treat a leak as a reason to rotate for everyone.
+
 ## 2. Choose how the key is supplied
 
 The CLI and the MCP bridge share one resolver. First configured method wins; a
